@@ -1,4 +1,4 @@
-(ns ogle.core
+(ns mars-ogler.core
   (:require [clojure.string :as str]
             [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
@@ -200,6 +200,11 @@
   (try (-> (slurp $images-file) read-string)
     (catch java.io.FileNotFoundException _ )))
 
+(def old-imgs (old-images))
+
+(set-last-id! (-> old-imgs first :id))
+(last-id)
+
 (defn dump-all-images!
   [images]
   (spit $images-file (prn-str images)))
@@ -212,9 +217,9 @@
 
 (defn fetch-new-images!
   []
-  (let [new-imgs (fetch-images-since (last-id))
-        new-id (-> new-imgs first :id)
+  (let [new-imgs (seq (fetch-images-since (last-id)))
         old-imgs (old-images)
+        new-id (-> (or new-imgs old-imgs) first :id)
         all-imgs (concat new-imgs old-imgs)]
     (dump-all-images! all-imgs)
     (set-last-id! new-id)
