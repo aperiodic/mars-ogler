@@ -3,6 +3,7 @@
             [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [clj-time.format :as fmt-time]
+            [mars-ogler.cams :as cams]
             [net.cgrand.enlive-html :as html]))
   (def % partial)
 
@@ -14,41 +15,15 @@
   #{:w :h :id :url
     :cam :delay :released :sol :taken-martian :taken-utc :thumbnail :type})
 
-;;
-;; Translations
-;;
-
-(defn label->cell-type
-  [label]
-  (-> label (str/split #" ") first keyword))
-
-(def cam-abbrev->name {"ML" "MastCam Left"
-                       "MR" "MastCam Right"
-                       "NLA" "NavCam Left-A"
-                       "NLB" "NavCam Left-B"
-                       "NRA" "NavCam Right-A"
-                       "NRB" "NavCam Right-B"
-                       "CR" "ChemCam"
-                       "MH" "MAHLI"
-                       "MD" "MARDI"
-                       "FLA" "HazCam Front-Left-A"
-                       "FLB" "HazCam Front-Left-B"
-                       "FRA" "HazCam Front-Right-A"
-                       "FRB" "HazCam Front-Right-B"
-                       "RLA" "HazCam Rear-Left-A"
-                       "RLB" "HazCam Rear-Left-B"
-                       "RRA" "HazCam Rear-Right-A"
-                       "RRB" "HazCam Rear-Right-B"})
-
-(def type-abbrev->type
-  (let [known-types {"B" "subframe"
-                     "C" "subframe"
-                     "D" "cropped"
-                     "E" "fullsize"
-                     "F" "fullsize"
-                     "I" "thumbnail"
-                     "T" "thumbnail"}]
-    (fn [abbrev] (get known-types abbrev abbrev))))
+(defn classify-size
+  [{:keys [w h type] :as image}]
+  (let [long-dim (max w h)
+        size (cond
+               (or (= type "I") (= type "T")) :thumbnail
+               (>= long-dim 512) :large
+               (>= long-dim 256) :medium
+               :otherwise :small)]
+    (assoc image :size size)))
 
 ;;
 ;; Scrapin'
@@ -72,12 +47,18 @@
   (-> cell
     html/text str/trim (str/replace #"\." "") marstime-parser rfc-printer))
 
+(defn label->cell-type
+  [label]
+  (-> label (str/split #" ") first keyword))
+
 (defmulti cell->map
   (fn [label _] (label->cell-type label)))
 
 (defmethod cell->map :camera
   [_ cell]
-  {:cam (-> (html/text cell) str/trim cam-abbrev->name)})
+  (let [abbrev (-> (html/text cell) str/trim)]
+    {:cam (cams/cams-by-abbrev abbrev)
+     :cam-name (cams/cam-names-by-abbrev abbrev)}))
 
 (defmethod cell->map :delay
   [_ cell]
@@ -122,7 +103,7 @@
 
 (defmethod cell->map :type
   [_ cell]
-  {:type (-> (html/text cell) str/trim type-abbrev->type)})
+  {:type (-> (html/text cell) str/trim)})
 
 (defmethod cell->map :width
   [_ cell]
@@ -147,7 +128,9 @@
         [label-row & img-rows] (html/select img-table [:tr])
         labels (->> (html/select label-row [:th])
                  (map (comp str/trim html/text)))]
-    (-> (map (% row->map labels) img-rows) reverse)))
+    (->> img-rows
+      (map (% row->map labels))
+      (map classify-size))))
 
 ;;
 ;; Fetchin'
