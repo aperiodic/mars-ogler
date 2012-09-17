@@ -7,6 +7,7 @@
                      "NRA" :navcam
                      "NRB" :navcam
                      "CR" :chemcam
+                     "CR0" :chemcam
                      "MH" :mahli
                      "MD" :mardi
                      "FLA" :hazcam
@@ -17,6 +18,8 @@
                      "RLB" :hazcam
                      "RRA" :hazcam
                      "RRB" :hazcam})
+
+(def cams (-> (vals cams-by-abbrev) distinct set))
 
 (def cam-names-by-abbrev {"ML" "MastCam Left"
                           "MR" "MastCam Right"
