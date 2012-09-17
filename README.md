@@ -6,7 +6,7 @@ filesystem caching.
 
 ## Usage
 
-Requires [leiningen][lein]. Scrape by running `lein run -m mars-ogler.core` in
+Requires [leiningen][lein]. Scrape by running `lein run -m mars-ogler.scrape` in
 the project root. Some stuff about dependencies will scroll by, which can
 probably be ignored. Once the scraper is going, it will print stuff about its
 progress to stdout. It ratelimits itself to no more than one page every 500

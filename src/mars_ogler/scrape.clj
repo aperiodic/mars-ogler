@@ -1,4 +1,4 @@
-(ns mars-ogler.core
+(ns mars-ogler.scrape
   (:require [clojure.string :as str]
             [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
