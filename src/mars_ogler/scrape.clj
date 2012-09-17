@@ -1,5 +1,6 @@
 (ns mars-ogler.scrape
-  (:require [clojure.string :as str]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [clj-time.format :as fmt-time]
@@ -13,8 +14,7 @@
 ;;
 
 (def image-attributes
-  #{:w :h :id :url
-    :cam :delay :released :sol :taken-martian :taken-utc :thumbnail :type})
+  (set/union #{:w :h :id :url :cam :delay :sol :thumbnail :type} times/types))
 
 (defn classify-size
   [{:keys [w h type] :as image}]
@@ -42,8 +42,8 @@
 (defmethod cell->map :camera
   [_ cell]
   (let [abbrev (-> (html/text cell) str/trim)]
-    {:cam (cams/cams-by-abbrev abbrev)
-     :cam-name (cams/cam-names-by-abbrev abbrev)}))
+    {:cam (get cams/cams-by-abbrev abbrev abbrev)
+     :cam-name (get cams/cam-names-by-abbrev abbrev abbrev)}))
 
 (defmethod cell->map :delay
   [_ cell]
