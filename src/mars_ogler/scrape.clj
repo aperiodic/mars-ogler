@@ -180,18 +180,6 @@
 ;; State & Main
 ;;
 
-(def $last-id-file "cache/last-id")
-
-(defn last-id
-  "Read the last id we know about from a file in the current directory"
-  []
-  (try (-> (slurp $last-id-file) read-string)
-    (catch java.io.FileNotFoundException _ nil)))
-
-(defn set-last-id!
-  [id]
-  (spit $last-id-file (prn-str id)))
-
 (def $images-file "cache/images")
 
 (defn old-images
@@ -199,11 +187,6 @@
   []
   (try (-> (slurp $images-file) read-string)
     (catch java.io.FileNotFoundException _ )))
-
-(def old-imgs (old-images))
-
-(set-last-id! (-> old-imgs first :id))
-(last-id)
 
 (defn dump-all-images!
   [images]
@@ -217,12 +200,12 @@
 
 (defn fetch-new-images!
   []
-  (let [new-imgs (seq (fetch-images-since (last-id)))
-        old-imgs (old-images)
-        new-id (-> (or new-imgs old-imgs) first :id)
-        all-imgs (concat new-imgs old-imgs)]
+  (let [old-imgs (old-images)
+        last-id (-> old-imgs first :id)
+        new-imgs (seq (fetch-images-since last-id))
+        all-imgs (concat new-imgs old-imgs)
+        new-id (-> all-imgs first :id)]
     (dump-all-images! all-imgs)
-    (set-last-id! new-id)
     (print-summary new-imgs all-imgs)))
 
 (defn -main
