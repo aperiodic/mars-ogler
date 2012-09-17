@@ -147,7 +147,7 @@
         [label-row & img-rows] (html/select img-table [:tr])
         labels (->> (html/select label-row [:th])
                  (map (comp str/trim html/text)))]
-    (map (% row->map labels) img-rows)))
+    (-> (map (% row->map labels) img-rows) reverse)))
 
 ;;
 ;; Fetchin'
@@ -182,8 +182,8 @@
 
 (def $images-file "cache/images")
 
-(defn old-images
-  "Read the images we already have from a file in the current directory"
+(defn cached-images
+  "Read the images cached in the `$images-file`."
   []
   (try (-> (slurp $images-file) read-string)
     (catch java.io.FileNotFoundException _ )))
@@ -200,7 +200,7 @@
 
 (defn fetch-new-images!
   []
-  (let [old-imgs (old-images)
+  (let [old-imgs (cached-images)
         last-id (-> old-imgs first :id)
         new-imgs (seq (fetch-images-since last-id))
         all-imgs (concat new-imgs old-imgs)
