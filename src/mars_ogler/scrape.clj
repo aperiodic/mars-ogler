@@ -4,6 +4,7 @@
             [clj-time.coerce :as cvt-time]
             [clj-time.format :as fmt-time]
             [mars-ogler.cams :as cams]
+            [mars-ogler.times :as times]
             [net.cgrand.enlive-html :as html]))
   (def % partial)
 
@@ -30,22 +31,6 @@
 ;;
 
 (def cell->int (comp #(Integer/parseInt %) html/text))
-
-(def rfc-printer (% fmt-time/unparse (fmt-time/formatters :rfc822)))
-
-(def utc-format (fmt-time/formatter "YYYY MMM dd HH:mm:ss"))
-(def utc-parser (comp (% fmt-time/parse utc-format) str/lower-case))
-(defn cell->utc-date-str
-  [cell]
-  (-> cell
-    html/text str/trim utc-parser rfc-printer))
-
-(def marstime-format (fmt-time/formatter "hh:mm:ss a"))
-(def marstime-parser (% fmt-time/parse marstime-format))
-(defn cell->marstime-str
-  [cell]
-  (-> cell
-    html/text str/trim (str/replace #"\." "") marstime-parser rfc-printer))
 
 (defn label->cell-type
   [label]
@@ -74,7 +59,7 @@
 
 (defmethod cell->map :lmst
   [_ cell]
-  {:taken-marstime (cell->marstime-str cell)})
+  {:taken-marstime (times/cell->marstime-str cell)})
 
 (defmethod cell->map :name
   [_ cell]
@@ -85,7 +70,7 @@
 
 (defmethod cell->map :released
   [_ cell]
-  {:released (cell->utc-date-str cell)})
+  {:released (times/cell->utc-date-str cell)})
 
 (defmethod cell->map :sol
   [_ cell]
@@ -93,7 +78,7 @@
 
 (defmethod cell->map :taken
   [_ cell]
-  {:taken-utc (cell->utc-date-str cell)})
+  {:taken-utc (times/cell->utc-date-str cell)})
 
 (defmethod cell->map :thumbnail
   [_ cell]
@@ -168,8 +153,9 @@
 (defn cached-images
   "Read the images cached in the `$images-file`."
   []
-  (try (-> (slurp $images-file) read-string)
-    (catch java.io.FileNotFoundException _ )))
+  (binding [*read-eval* false]
+    (try (-> (slurp $images-file) read-string)
+      (catch java.io.FileNotFoundException _ ))))
 
 (defn dump-all-images!
   [images]
