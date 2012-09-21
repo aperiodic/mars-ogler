@@ -4,13 +4,18 @@
             [compojure.response :as response]
             [mars-ogler.views :as views])
   (:use [compojure.core :only [defroutes GET]]
-        [hiccup.middleware :only [wrap-base-url]]))
+        [ring.middleware cookies
+                         keyword-params
+                         params]))
 
 (defroutes the-routes
-  (GET "/" [& params :as req]
-    (views/filter-pics params))
+  (GET "/" [& params]
+    (views/pics params))
   (route/resources "/")
   (route/not-found "You have wandered into a maze of twisty passages, all alike"))
 
 (def handler
-  (-> (handler/site the-routes) wrap-base-url))
+  (-> the-routes
+    wrap-keyword-params
+    wrap-params
+    wrap-cookies))
