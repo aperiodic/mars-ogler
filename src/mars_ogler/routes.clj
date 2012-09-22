@@ -8,14 +8,14 @@
                          keyword-params
                          params]))
 
-(defroutes the-routes
+(defroutes ogler-routes
   (GET "/" [& params]
     (views/pics params))
   (route/resources "/")
   (route/not-found "You have wandered into a maze of twisty passages, all alike"))
 
-(def handler
-  (-> the-routes
+(def ogler-handler
+  (-> ogler-routes
     wrap-keyword-params
     wrap-params
     wrap-cookies))
