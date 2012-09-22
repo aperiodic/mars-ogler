@@ -10,14 +10,6 @@
   (def % partial)
 
 ;;
-;; Images Atom
-;;
-
-(def ^{:doc "If you just want to grab the most recent images pre-sorted by all
-            three orderings, then deref this atom."}
-  sorted-images (atom nil))
-
-;;
 ;; Scrapin'
 ;;
 
@@ -227,22 +219,26 @@
   (println "I found" (count new-images) "new photos, so now we have"
              (count all-images) "total")))
 
-(defn fetch-tick!
+(defn fetch-tick
   [old-imgs]
   (let [last-id (-> old-imgs first :id)
         new-imgs (parse-dates (fetch-images-since last-id))
         all-imgs (concat new-imgs old-imgs)]
     {:all all-imgs, :new new-imgs, :old old-imgs}))
 
+(def ^{:doc "If you just want to grab the most recent images pre-sorted by all
+            three orderings, then deref this atom."}
+  sorted-images (atom nil))
+
 (defn update-states!
   [imgs]
   (cache-images! imgs)
   (reset! sorted-images (sort-images imgs)))
 
-(defn -main
-  [& _]
+(defn scrape-loop
+  []
   (loop [imgs (get-cached-images)]
-    (let [{:keys [new old all]} (fetch-tick! imgs)]
+    (let [{:keys [new old all]} (fetch-tick imgs)]
       (print-summary new all)
       (when-not (empty? new)
         (update-states! all))
