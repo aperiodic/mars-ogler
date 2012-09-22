@@ -9,14 +9,23 @@
 (def types #{:released :taken-marstime :taken-utc})
 
 (def rfc-format (fmt-time/formatters :rfc822))
-(def rfc-printer (% fmt-time/unparse rfc-format))
 (def rfc-parser (% fmt-time/parse rfc-format))
+(def rfc-printer (% fmt-time/unparse rfc-format))
 
-(def marstime-format (fmt-time/formatter "hh:mm:ss a"))
-(def marstime-parser (% fmt-time/parse marstime-format))
+(def marstime-in-format (fmt-time/formatter "hh:mm:ss a"))
+(def marstime-parser (% fmt-time/parse marstime-in-format))
 
-(def utc-format (fmt-time/formatter "YYYY MMM dd HH:mm:ss"))
-(def utc-parser (comp (% fmt-time/parse utc-format) str/lower-case))
+(def marstime-out-format
+  (fmt-time/formatter "hh:mm <'span class=\"meridian\"'>a</'span'>"))
+(def marstime-printer (% fmt-time/unparse marstime-out-format))
+
+(def utc-in-format (fmt-time/formatter "YYYY MMM dd HH:mm:ss"))
+(def utc-parser (comp (% fmt-time/parse utc-in-format) str/lower-case))
+
+(def utc-out-format
+  (fmt-time/formatter (str "h:mm <'span class=\"meridian\"'>a</'span'> 'UTC', "
+                           "d MMMM YYYY")))
+(def utc-printer (% fmt-time/unparse utc-out-format))
 
 (defn cell->marstime-str
   [cell]
@@ -27,3 +36,27 @@
   [cell]
   (-> cell
     html/text str/trim utc-parser rfc-printer))
+
+(defn- format-with-units
+  ([value units]
+   (let [s (str value " " units)]
+     (if (= value 1)
+       (.substring s 0 (dec (count s)))
+       s)))
+  ([v1 u1 v2 u2]
+   (let [s1 (format-with-units v1 u1)]
+     (if (= v2 0)
+       s1
+       (str s1 " and " (format-with-units v2 u2))))))
+
+(defn format-interval
+  [interval]
+  (let [secs (time/in-secs interval)
+        mins (time/in-minutes interval)
+        hours (time/in-hours interval)
+        days (time/in-days interval)]
+    (cond
+      (< secs 60) (format-with-units secs "seconds")
+      (< mins 60) (format-with-units mins "minutes")
+      (< hours 24) (format-with-units hours "hours" (mod mins 60) "minutes")
+      :otherwise (format-with-units days "days" (mod hours 24) "hours"))))
