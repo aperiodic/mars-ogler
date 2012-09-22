@@ -6,16 +6,16 @@ filesystem caching.
 
 ## Usage
 
-Requires [leiningen][lein]. Start an endless scraper by running `lein run -m
-mars-ogler.scrape` in the project root. Some stuff about dependencies will
-scroll by, which can probably be ignored. Once the scraper is going, it will
-print information about its progress to stdout. It ratelimits itself by waiting
-for half a second before making a new request, so it will take a few minutes.
-Once all new images have been fetched, the new and total image counts are
-printed, and the new list of all images is serialized to disk as readable forms
-in `cache/images`. Until it's terminated, the ogler will check for new images
-every minute or so, update its state if it finds any, and print a report to
-stdout.
+Requires [leiningen][lein]. Start the ogler with `lein run`, which loads all
+cached images, starts a jetty server on port 3000, and enters an endless scrape
+loop. On the first run, there will be no cached images, so it'll have to fetch
+all the current ones, which will take several minutes. Information about the
+scraping progress will be printed to stdout. Once it's finished, the list of
+images is serialized to disk, and the total image count will be printed to
+stdout. At this point, you can navigate to `localhost:3000` and see the images.
+In the scrape loop, the ogler will check for new images every minute or so,
+update its states so that the new images will be visible after a page refresh
+(if any are found), and print a report to stdout.
 
 [lein]: http://leiningen.org
 

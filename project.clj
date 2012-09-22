@@ -11,4 +11,5 @@
                  [ring/ring-core "1.1.5"]
                  [ring/ring-jetty-adapter "1.1.5"]]
   :plugins [[lein-ring "0.7.1"]]
+  :main mars-ogler.main
   :ring {:handler mars-ogler.routes/handler})
