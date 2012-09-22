@@ -6,37 +6,22 @@
             [mars-ogler.times :as times])
   (:use [hiccup core page]))
 
-(def images (scrape/cached-images))
+(def sorted-cached (-> (scrape/get-cached-images) scrape/sort-images))
 
-(defn parse-dates
-  [image]
-  (let [strs (select-keys image times/types)
-        dates (into {} (for [[type date-str] strs]
-                         [type (times/rfc-parser date-str)]))]
-    (merge image dates)))
+(defn pic->html
+  [{:keys [cam cam-name id lag released size sol taken-marstime taken-utc
+           thumbnail-url type url w h]}]
+  (html
+    [:div.pic-wrapper
+     [:div.pic
+      [:a {:href url} [:img {:src thumbnail-url}]]]
+     [:div.pic-info
+      "Taken by " [:span.cam cam-name] " at " [:span.marstime taken-marstime]
+      " local time on Sol " sol " (" [:span.takendate taken-utc] ")" [:br]
+      "Released at " [:span.releasedate released] ", " lag " later" [:br]
+      w [:span.x "x"] h " pixels, Type " type ", ID: " id]]))
 
-(defn unparse-dates
-  [image]
-  (let [dates (select-keys image times/types)
-        strs (into {} (for [[type date] dates]
-                         [type (times/rfc-printer date)]))]
-    (merge image strs)))
-
-(defn sort-images
-  [images]
-  (into {} (for [time-type times/types]
-             (let [dated (map parse-dates images)
-                   resort (case time-type
-                            :released reverse
-                            :taken-marstime identity
-                            :taken-utc reverse)
-                   sorted (-> (sort-by time-type dated) resort)
-                   str-dated (map unparse-dates sorted)]
-               [time-type (doall str-dated)]))))
-
-(def sorted-images (sort-images images))
-
-(defn filter-pics
+(defn pics
   [{:keys [cams page per-page sorting thumbs]
     :or {cams "mahli mastcam navcam"
          page "1"
@@ -44,16 +29,16 @@
          sorting "released"
          thumbs "no"}}]
   (let [page (Integer/parseInt page)
-        per-page (Integer/parseInt per-page)
+        per-page (min (Integer/parseInt per-page) 100)
         sorting (keyword sorting)
         cams (->> (str/split cams #" ") (map keyword) set)
         cam-pred (fn [img] (-> img :cam cams))
         size-pred (case thumbs
                     "no" #(not= (:size %) :thumbnail)
                     "yes" (constantly true)
-                    "only" #(= (:size %) :thumbnail))
-        filtered (filter (every-pred size-pred cam-pred)
-                         (get sorted-images sorting))]
-    (->> filtered
+                    "only" #(= (:size %) :thumbnail))]
+    (->> (filter (every-pred size-pred cam-pred)
+                 (get sorted-cached sorting ()))
       (drop (* (dec page) per-page))
-      (take per-page))))
+      (take per-page)
+      (map pic->html))))

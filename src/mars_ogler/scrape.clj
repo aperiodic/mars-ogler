@@ -10,21 +10,12 @@
   (def % partial)
 
 ;;
-;; Attributes
+;; Images Atom
 ;;
 
-(def image-attributes
-  (set/union #{:w :h :id :url :cam :delay :sol :thumbnail :type} times/types))
-
-(defn classify-size
-  [{:keys [w h type] :as image}]
-  (let [long-dim (max w h)
-        size (cond
-               (or (= type "I") (= type "T")) :thumbnail
-               (>= long-dim 512) :large
-               (>= long-dim 256) :medium
-               :otherwise :small)]
-    (assoc image :size size)))
+(def ^{:doc "If you just want to grab the most recent images pre-sorted by all
+            three orderings, then deref this atom."}
+  sorted-images (atom nil))
 
 ;;
 ;; Scrapin'
@@ -94,6 +85,16 @@
   [_ cell]
   {:w (cell->int cell)})
 
+(defn classify-size
+  [{:keys [w h type] :as image}]
+  (let [long-dim (max w h)
+        size (cond
+               (or (= type "I") (= type "T")) :thumbnail
+               (>= long-dim 512) :large
+               (>= long-dim 256) :medium
+               :otherwise :small)]
+    (assoc image :size size)))
+
 (defn row->url
   [row]
   (let [img-link (-> (html/select row [:a]) first)]
@@ -118,7 +119,48 @@
       (map classify-size))))
 
 ;;
-;; Fetchin'
+;; Date Formatting
+;;
+;; Gotta store and display them as strings, but want them as Joda DateTime
+;; objects in between.
+;;
+
+(defn parse-dates
+  [image|s]
+  (if (sequential? image|s)
+    (map parse-dates image|s)
+    (let [image image|s
+          strs (select-keys image times/types)
+          dates (into {} (for [[type date-str] strs]
+                           [type (times/rfc-parser date-str)]))
+          lag (-> (time/interval (:taken-utc dates) (:released-utc dates))
+                times/format-interval)]
+      (-> (merge image dates)
+        (assoc :lag lag)))))
+
+(defn unparse-dates
+  [image|s]
+  (if (sequential? image|s)
+    (map unparse-dates image|s)
+    (let [image image|s
+          dates (select-keys image times/types)]
+      (into image (for [[type date] dates]
+                    [type (times/rfc-printer date)])))))
+
+(defn format-dates
+  [image|s]
+  (if (sequential? image|s)
+    (map format-dates image|s)
+    (let [image image|s
+          full-dates (select-keys image (disj times/types :taken-marstime))]
+      (merge
+        image
+        {:taken-marstime (-> image :taken-marstime times/marstime-printer)}
+        (into {} (for [[type date] full-dates]
+                   [type (times/utc-printer date)]))))))
+
+;;
+;; Actually Fetching the Pages
 ;;
 
 (defn page-url
@@ -132,7 +174,7 @@
 (defn fetch-images-since
   [last-id]
   (let [last-img? (fn [img] (= (:id img) last-id))]
-    (println "fetching page 1")
+    (println "Checking for new photos...")
     (loop [i 1, imgs ()]
       (let [page-imgs (body->images (fetch-page i))
             last-page? (some last-img? page-imgs)
@@ -141,8 +183,24 @@
           imgs'
           (do
             (Thread/sleep 500) ; ratelimit ourselves
-            (println "fetching page" (inc i))
+            (println "Oh boy, there's a lot! Fetching page" (inc i))
             (recur (inc i) imgs')))))))
+
+;;
+;; AOT Sorting
+;;
+
+(defn sort-images
+  "The images must contain joda DateTime objects in their date keys."
+  [imgs]
+  (into {} (for [time-type times/types]
+             (let [resort (case time-type
+                            :released reverse
+                            :taken-marstime identity
+                            :taken-utc reverse)
+                   sorted (-> (sort-by time-type imgs) resort)
+                   str-dated (map format-dates sorted)]
+               [time-type (-> (sort-by time-type imgs) resort doall)]))))
 
 ;;
 ;; State & Main
@@ -150,34 +208,43 @@
 
 (def $images-file "cache/images")
 
-(defn cached-images
+(defn get-cached-images
   "Read the images cached in the `$images-file`."
   []
   (binding [*read-eval* false]
-    (try (-> (slurp $images-file) read-string)
+    (try (-> (slurp $images-file) read-string parse-dates)
       (catch java.io.FileNotFoundException _ ))))
 
-(defn dump-all-images!
-  [images]
-  (spit $images-file (prn-str images)))
+(defn cache-images!
+  [imgs]
+  (spit $images-file (prn-str (unparse-dates imgs))))
 
 (defn print-summary
   [new-images all-images]
-  (println
-    "fetched" (count new-images) "new images, have" (count all-images) "in"
-    "total"))
+  (if (empty? new-images)
+  (println "I couldn't find any new photos, so we still have"
+           (count all-images) "total")
+  (println "I found" (count new-images) "new photos, so now we have"
+             (count all-images) "total")))
 
-(defn fetch-new-images!
-  []
-  (let [old-imgs (cached-images)
-        last-id (-> old-imgs first :id)
-        new-imgs (seq (fetch-images-since last-id))
-        all-imgs (concat new-imgs old-imgs)
-        new-id (-> all-imgs first :id)]
-    (dump-all-images! all-imgs)
-    (print-summary new-imgs all-imgs)))
+(defn fetch-tick!
+  [old-imgs]
+  (let [last-id (-> old-imgs first :id)
+        new-imgs (parse-dates (fetch-images-since last-id))
+        all-imgs (concat new-imgs old-imgs)]
+    {:all all-imgs, :new new-imgs, :old old-imgs}))
+
+(defn update-states!
+  [imgs]
+  (cache-images! imgs)
+  (reset! sorted-images (sort-images imgs)))
 
 (defn -main
-  "Fetch new images and add them to the list of known images"
   [& _]
-  (fetch-new-images!))
+  (loop [imgs (get-cached-images)]
+    (let [{:keys [new old all]} (fetch-tick! imgs)]
+      (print-summary new all)
+      (when-not (empty? new)
+        (update-states! all))
+      (Thread/sleep (* 60 1000))
+      (recur all))))
