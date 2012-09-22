@@ -230,12 +230,18 @@
             three orderings, then deref this atom."}
   sorted-images (atom nil))
 
+(defn setup-state!
+  []
+  (->> (get-cached-images)
+    sort-images
+    (reset! sorted-images)))
+
 (defn update-states!
   [imgs]
   (cache-images! imgs)
   (reset! sorted-images (sort-images imgs)))
 
-(defn scrape-loop
+(defn scrape-loop!
   []
   (loop [imgs (get-cached-images)]
     (let [{:keys [new old all]} (fetch-tick imgs)]
