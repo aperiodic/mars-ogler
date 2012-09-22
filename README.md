@@ -23,4 +23,4 @@ update its states so that the new images will be visible after a page refresh
 
 Copyright © 2012 Dan Lidral-Porter
 
-Distributed under the Eclipse Public License, the same as Clojure.
+Distributed under the GNU Affero General Public License (see COPYING).
