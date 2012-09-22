@@ -6,14 +6,16 @@ filesystem caching.
 
 ## Usage
 
-Requires [leiningen][lein]. Scrape by running `lein run -m mars-ogler.scrape` in
-the project root. Some stuff about dependencies will scroll by, which can
-probably be ignored. Once the scraper is going, it will print stuff about its
-progress to stdout. It ratelimits itself to no more than one page every 500
-milliseconds, so it will take a few minutes. Once all new images have been
-fetched, the new and total image counts are printed to stdout.  After finishing,
-the data (as readable clojure forms) are cached in `cache/images`. Subsequent
-runs will fetch only new images, and add them to the cache.
+Requires [leiningen][lein]. Start an endless scraper by running `lein run -m
+mars-ogler.scrape` in the project root. Some stuff about dependencies will
+scroll by, which can probably be ignored. Once the scraper is going, it will
+print information about its progress to stdout. It ratelimits itself by waiting
+for half a second before making a new request, so it will take a few minutes.
+Once all new images have been fetched, the new and total image counts are
+printed, and the new list of all images is serialized to disk as readable forms
+in `cache/images`. Until it's terminated, the ogler will check for new images
+every minute or so, update its state if it finds any, and print a report to
+stdout.
 
 [lein]: http://leiningen.org
 
