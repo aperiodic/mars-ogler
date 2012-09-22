@@ -6,8 +6,6 @@
             [mars-ogler.times :as times])
   (:use [hiccup core page]))
 
-(def sorted-cached (-> (scrape/get-cached-images) scrape/sort-images))
-
 (defn pic->html
   [{:keys [cam cam-name id lag released size sol taken-marstime taken-utc
            thumbnail-url type url w h]}]
@@ -38,7 +36,7 @@
                     "yes" (constantly true)
                     "only" #(= (:size %) :thumbnail))]
     (->> (filter (every-pred size-pred cam-pred)
-                 (get sorted-cached sorting ()))
+                 (get @scrape/sorted-images sorting ()))
       (drop (* (dec page) per-page))
       (take per-page)
       (map pic->html))))
