@@ -232,9 +232,7 @@
 
 (defn setup-state!
   []
-  (->> (get-cached-images)
-    sort-images
-    (reset! sorted-images)))
+  (reset! sorted-images (sort-images (get-cached-images))))
 
 (defn update-states!
   [imgs]
@@ -243,10 +241,20 @@
 
 (defn scrape-loop!
   []
-  (loop [imgs (get-cached-images)]
-    (let [{:keys [new old all]} (fetch-tick imgs)]
-      (print-summary new all)
-      (when-not (empty? new)
-        (update-states! all))
-      (Thread/sleep (* 60 1000))
-      (recur all))))
+  (let [backup-imgs (atom (get-cached-images))]
+    (while true
+      (try (loop [imgs @backup-imgs]
+             (let [{:keys [new old all]} (fetch-tick imgs)]
+               (print-summary new all)
+               (when-not (empty? new)
+                 (update-states! all)
+                 (reset! backup-imgs all))
+               (Thread/sleep (* 60 1000))
+               (recur all)))
+        (catch Throwable err
+          (let [cause (.getCause err)
+                err-msg (str (.getMessage err)
+                             (and cause
+                                  (str " caused by: ") (.getMessage cause)))]
+            (println "Had some trouble in the scrape loop:" err-msg))
+          (Thread/sleep (* 60 1000)))))))
