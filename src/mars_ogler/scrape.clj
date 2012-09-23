@@ -111,47 +111,6 @@
       (map classify-size))))
 
 ;;
-;; Date Formatting
-;;
-;; Gotta store and display them as strings, but want them as Joda DateTime
-;; objects in between.
-;;
-
-(defn parse-dates
-  [image|s]
-  (if (sequential? image|s)
-    (map parse-dates image|s)
-    (let [image image|s
-          strs (select-keys image times/types)
-          dates (into {} (for [[type date-str] strs]
-                           [type (times/rfc-parser date-str)]))
-          lag (-> (time/interval (:taken-utc dates) (:released-utc dates))
-                times/format-interval)]
-      (-> (merge image dates)
-        (assoc :lag lag)))))
-
-(defn unparse-dates
-  [image|s]
-  (if (sequential? image|s)
-    (map unparse-dates image|s)
-    (let [image image|s
-          dates (select-keys image times/types)]
-      (into image (for [[type date] dates]
-                    [type (times/rfc-printer date)])))))
-
-(defn format-dates
-  [image|s]
-  (if (sequential? image|s)
-    (map format-dates image|s)
-    (let [image image|s
-          full-dates (select-keys image (disj times/types :taken-marstime))]
-      (merge
-        image
-        {:taken-marstime (-> image :taken-marstime times/marstime-printer)}
-        (into {} (for [[type date] full-dates]
-                   [type (times/utc-printer date)]))))))
-
-;;
 ;; Actually Fetching the Pages
 ;;
 
@@ -179,6 +138,60 @@
             (recur (inc i) imgs')))))))
 
 ;;
+;; Date Parsing/Unparsing
+;;
+;; Gotta store the dates as strings, but want them as Joda DateTime objects
+;; to do sorting.
+;;
+
+(defn parse-dates
+  [img]
+  (let [strs (select-keys img times/types)
+        dates (into {} (for [[type date-str] strs]
+                         [type (times/rfc-parser date-str)]))
+        lag (-> (time/interval (:taken-utc dates) (:released-utc dates))
+              times/format-interval)]
+    (-> (merge img dates)
+      (assoc :lag lag))))
+
+(defn unparse-dates
+  [img]
+  (let [dates (select-keys img times/types)]
+    (into img (for [[type date] dates]
+                [type (times/rfc-printer date)]))))
+
+;;
+;; Formatting
+;;
+
+(defn format-dates
+  [img]
+  (let [full-dates (select-keys img (disj times/types :taken-marstime))]
+    (merge
+      img
+      {:taken-marstime (-> img :taken-marstime times/marstime-printer)}
+      (into {} (for [[type date] full-dates]
+                 [type (times/utc-printer date)])))))
+
+(defn format-type
+  [img]
+  (let [type-code (:type img)
+        formatted-type (condp = type-code
+                         "B" "Subsampled Image"
+                         "C" "Subsampled Image"
+                         "D" "Subsampled Image"
+                         "E" "Full Image"
+                         "F" "Full Image"
+                         "I" "Thumbnail"
+                         "S" "Depth Map"
+                         "T" "Thumbnail"
+                         "U" "Depth Map"
+                         (str "Type " type-code " Image"))]
+    (assoc img :type formatted-type)))
+
+(def format-image (comp format-dates format-type))
+
+;;
 ;; AOT Sorting
 ;;
 
@@ -189,12 +202,16 @@
              (let [resort (case time-type
                             :released reverse
                             :taken-marstime identity
-                            :taken-utc reverse)
-                   sorted (-> (sort-by time-type imgs) resort)]
-               [time-type (->> (sort-by time-type imgs)
+                            :taken-utc reverse)]
+               [time-type (->> imgs
+                            (sort-by time-type)
                             resort
-                            (map format-dates)
+                            (map format-image)
                             doall)]))))
+
+;;
+;; Transformations
+;;
 
 ;;
 ;; State & Main
@@ -206,12 +223,18 @@
   "Read the images cached in the `$images-file`."
   []
   (binding [*read-eval* false]
-    (try (-> (slurp $images-file) read-string parse-dates)
+    (try (->> $images-file
+           slurp
+           read-string
+           (map parse-dates))
       (catch java.io.FileNotFoundException _ ))))
 
 (defn cache-images!
   [imgs]
-  (spit $images-file (prn-str (unparse-dates imgs))))
+  (->> imgs
+    (map unparse-dates)
+    prn-str
+    (spit $images-file)))
 
 (defn print-summary
   [new-images all-images]
@@ -224,7 +247,7 @@
 (defn fetch-tick
   [old-imgs]
   (let [last-id (-> old-imgs first :id)
-        new-imgs (parse-dates (fetch-images-since last-id))
+        new-imgs (map parse-dates (fetch-images-since last-id))
         all-imgs (concat new-imgs old-imgs)]
     {:all all-imgs, :new new-imgs, :old old-imgs}))
 
