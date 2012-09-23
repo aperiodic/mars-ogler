@@ -190,9 +190,11 @@
                             :released reverse
                             :taken-marstime identity
                             :taken-utc reverse)
-                   sorted (-> (sort-by time-type imgs) resort)
-                   str-dated (map format-dates sorted)]
-               [time-type (-> (sort-by time-type imgs) resort doall)]))))
+                   sorted (-> (sort-by time-type imgs) resort)]
+               [time-type (->> (sort-by time-type imgs)
+                            resort
+                            (map format-dates)
+                            doall)]))))
 
 ;;
 ;; State & Main
