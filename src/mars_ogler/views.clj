@@ -13,10 +13,11 @@
    [:div.pic
     [:a {:href url} [:img {:src thumbnail-url}]]]
    [:div.pic-info
-    "Taken by " [:span.cam cam-name] " at " [:span.marstime taken-marstime]
-    " local time on Sol " sol " (" [:span.takendate taken-utc] ")" [:br]
-    "Released at " [:span.releasedate released] ", " lag " later" [:br]
-    w [:span.x "x"] h " pixels, Type " type ", ID: " id]])
+    [:div.title-line
+     cam-name [:span.at " at "] [:span.marstime taken-marstime] " on Sol " sol]
+    "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
+    "Released " lag " later at " [:span.releasedate released] [:br]
+    w [:span.x " x "] h " pixels | Type " type " | ID: " id]])
 
 (defn pics
   [{:keys [cams page per-page sorting thumbs]
@@ -45,11 +46,21 @@
   (html5
     [:head
      [:title "The Mars Ogler"]
-     (include-css "/css/main.css")]
+     (include-css "/css/main.css")
+     (include-css "http://fonts.googleapis.com/css?family=Oswald:400,700,300")
+     (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700")]
     [:body
      [:div#content
-      [:h2 "The Mars Ogler"]
-      [:div#blurb "A Curiosity Mars Science Laboratory raw images viewer"]
+      [:h1 "The Mars Ogler"]
+      [:div#blurb
+       "A Curiosity Mars Science Laboratory raw images viewer."
+       [:br]
+       "Built on top of "
+       [:a {:href "http://curiositymsl.com/"} "Curiosity MSL Viewer"]
+       " and "
+       [:a {:href "http://mars.jpl.nasa.gov/"} "NASA JPL Mars Exploration"]
+       "."
+       ]
       [:div#toolbar
        "Eventually there will be some tools here"]
       [:div#pics (pics filter-params)]

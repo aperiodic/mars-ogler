@@ -23,7 +23,7 @@
 (def utc-parser (comp (% fmt-time/parse utc-in-format) str/lower-case))
 
 (def utc-out-format
-  (fmt-time/formatter (str "h:mm <'span class=\"meridian\"'>a</'span'> 'UTC', "
+  (fmt-time/formatter (str "h:mm <'span class=\"meridian\"'>a</'span'> 'UTC' "
                            "d MMMM YYYY")))
 (def utc-printer (% fmt-time/unparse utc-out-format))
 
