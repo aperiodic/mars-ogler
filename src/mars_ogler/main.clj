@@ -7,6 +7,5 @@
 (defn -main
   [& _]
   (setup-state!)
-  (run-jetty ogler-handler {:join? false, :port 3000})
-  (Thread/sleep (* 60 1000))
+  (run-jetty ogler-handler {:join? false, :port 2001})
   (scrape-loop!))
