@@ -14,7 +14,8 @@
     [:a {:href url} [:img {:src thumbnail-url}]]]
    [:div.pic-info
     [:div.title-line
-     cam-name [:span.at " at "] [:span.marstime taken-marstime] " on Sol " sol]
+     cam-name [:span.minor " at "] [:span.marstime taken-marstime]
+     [:span.minor " on "] "Sol " sol]
     "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
     "Released " lag " later at " [:span.releasedate released] [:br]
     w [:span.x " x "] h " " type " | ID: " id]])
@@ -51,7 +52,7 @@
      (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700")]
     [:body
      [:div#content
-      [:h1 "The Mars Ogler"]
+      [:h1#title "The Mars Ogler"]
       [:div#blurb
        "A Curiosity Mars Science Laboratory raw images viewer."
        [:br]
