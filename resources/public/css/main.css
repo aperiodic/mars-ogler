@@ -7,12 +7,19 @@ body {
   text-decoration: bold;
 }
 
+a {
+  color: #183890;
+}
+
+a:visited {
+  color: #711606;
+}
+
 #content {
-  width: 800px;
+  width: 850px;
   margin: auto;
   padding-left: 1em;
   padding-right: 1em;
-
 }
 
 #title {
