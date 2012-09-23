@@ -7,16 +7,28 @@ body {
   text-decoration: bold;
 }
 
-h1 {
-  font-family: 'Oswald', Helvetica, 'sans-serif';;
-}
-
 #content {
   width: 800px;
   margin: auto;
   padding-left: 1em;
   padding-right: 1em;
 
+}
+
+#title {
+  font-family: 'Oswald', Helvetica, 'sans-serif';;
+  font-size: 2.5em;
+
+  float: left;
+  margin-right: 1em;
+}
+
+#blurb {
+  padding-top: 1.75em;
+}
+
+#toolbar {
+  clear: both;
 }
 
 .pic-wrapper {

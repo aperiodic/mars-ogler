@@ -54,13 +54,16 @@
      [:div#content
       [:h1#title "The Mars Ogler"]
       [:div#blurb
-       "A Curiosity Mars Science Laboratory raw images viewer."
+       "A Curiosity Mars Science Laboratory raw images viewer"
        [:br]
        "Built on top of "
        [:a {:href "http://curiositymsl.com/"} "Curiosity MSL Viewer"]
        " and "
-       [:a {:href "http://mars.jpl.nasa.gov/"} "NASA JPL Mars Exploration"]
-       "."
+       [:a {:href "http://mars.jpl.nasa.gov/"} "NASA Mars Exploration"]
+       [:br]
+       "How about a "
+       [:a {:href "http://www.penny4nasa.org/the-mission/"} "Penny for NASA"]
+       "?"
        ]
       [:div#toolbar
        "Eventually there will be some tools here"]
