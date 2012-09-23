@@ -216,7 +216,7 @@
 (defn print-summary
   [new-images all-images]
   (if (empty? new-images)
-  (println "I couldn't find any new photos, so we still have"
+  (println "I didn't find any new photos, so we still have"
            (count all-images) "total")
   (println "I found" (count new-images) "new photos, so now we have"
              (count all-images) "total")))
