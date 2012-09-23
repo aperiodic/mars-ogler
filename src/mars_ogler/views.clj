@@ -17,7 +17,7 @@
      cam-name [:span.at " at "] [:span.marstime taken-marstime] " on Sol " sol]
     "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
     "Released " lag " later at " [:span.releasedate released] [:br]
-    w [:span.x " x "] h " pixels | Type " type " | ID: " id]])
+    w [:span.x " x "] h " " type " | ID: " id]])
 
 (defn pics
   [{:keys [cams page per-page sorting thumbs]
