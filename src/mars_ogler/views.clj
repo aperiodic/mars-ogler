@@ -6,18 +6,17 @@
             [mars-ogler.times :as times])
   (:use [hiccup core page]))
 
-(defn pic->html
+(defn pic->hiccup
   [{:keys [cam cam-name id lag released size sol taken-marstime taken-utc
            thumbnail-url type url w h]}]
-  (html
-    [:div.pic-wrapper
-     [:div.pic
-      [:a {:href url} [:img {:src thumbnail-url}]]]
-     [:div.pic-info
-      "Taken by " [:span.cam cam-name] " at " [:span.marstime taken-marstime]
-      " local time on Sol " sol " (" [:span.takendate taken-utc] ")" [:br]
-      "Released at " [:span.releasedate released] ", " lag " later" [:br]
-      w [:span.x "x"] h " pixels, Type " type ", ID: " id]]))
+  [:div.pic-wrapper
+   [:div.pic
+    [:a {:href url} [:img {:src thumbnail-url}]]]
+   [:div.pic-info
+    "Taken by " [:span.cam cam-name] " at " [:span.marstime taken-marstime]
+    " local time on Sol " sol " (" [:span.takendate taken-utc] ")" [:br]
+    "Released at " [:span.releasedate released] ", " lag " later" [:br]
+    w [:span.x "x"] h " pixels, Type " type ", ID: " id]])
 
 (defn pics
   [{:keys [cams page per-page sorting thumbs]
@@ -39,4 +38,19 @@
                  (get @scrape/sorted-images sorting ()))
       (drop (* (dec page) per-page))
       (take per-page)
-      (map pic->html))))
+      (map pic->hiccup))))
+
+(defn index
+  [filter-params]
+  (html5
+    [:head
+     [:title "The Mars Ogler"]
+     (include-css "/css/main.css")]
+    [:body
+     [:div#content
+      [:h2 "The Mars Ogler"]
+      [:div#blurb "A Curiosity Mars Science Laboratory raw images viewer"]
+      [:div#toolbar
+       "Eventually there will be some tools here"]
+      [:div#pics (pics filter-params)]
+      ]]))

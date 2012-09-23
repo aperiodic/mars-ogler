@@ -10,7 +10,7 @@
 
 (defroutes ogler-routes
   (GET "/" [& params]
-    (views/pics params))
+    (views/index params))
   (route/resources "/")
   (route/not-found "You have wandered into a maze of twisty passages, all alike"))
 
