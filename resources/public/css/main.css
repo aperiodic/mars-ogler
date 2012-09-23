@@ -2,6 +2,7 @@ body {
   color: #1d150d;
   background-image: url("/img/noise.png");
 
+  font-size: 18px;
   font-family: 'Source Sans Pro', Helvetica, 'sans-serif';
   text-decoration: bold;
 }
@@ -11,7 +12,7 @@ h1 {
 }
 
 #content {
-  width: 750px;
+  width: 800px;
   margin: auto;
   padding-left: 1em;
   padding-right: 1em;
