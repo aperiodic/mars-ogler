@@ -69,25 +69,26 @@
                                      :value sort-type
                                      :checked (= sort-type sorting)}]
                             (sorting-names sort-type)]])]
-    [:div#toolbar
-     [:form {:action "/"}
-      [:div#cam-toggles [:span.tool-label "Cameras:"] cam-boxes]
-      [:div#sorting [:span.tool-label "Sort By:"] sorting-buttons]
-      [:div#misc
-       [:span.tool-label "Photos per Page:"]
-       [:select {:name "per-page"}
-        (for [amount [10 25 50 100]]
-          [:option {:value amount, :selected (= amount per-page)}
-           amount])]
-       " | "
-       [:span.tool-label "Thumbnails?:"]
-       (for [opt [:no :yes :only]]
-         [:span.option
-          [:label
-           [:input {:type "radio", :name "thumbs", :value opt,
-                    :checked (= opt thumbs)}]
-           (-> opt name str/capitalize)]])]
-      [:div#update [:input {:type "submit" :value "Update Settings"}]]]]))
+    [:div#toolbar-wrapper
+     [:div#toolbar.content
+      [:form {:action "/"}
+       [:div#update [:input {:type "submit" :value "Update"}]]
+       [:div#cam-toggles [:span.tool-label "Cameras:"] cam-boxes]
+       [:div#sorting [:span.tool-label "Sort By:"] sorting-buttons]
+       [:div#misc
+        [:span.tool-label "Photos per Page:"]
+        [:select {:name "per-page"}
+         (for [amount [10 25 50 100]]
+           [:option {:value amount, :selected (= amount per-page)}
+            amount])]
+        " | "
+        [:span.tool-label "Thumbnails?:"]
+        (for [opt [:no :yes :only]]
+          [:span.option
+           [:label
+            [:input {:type "radio", :name "thumbs", :value opt,
+                     :checked (= opt thumbs)}]
+            (-> opt name str/capitalize)]])]]]]))
 
 (defn index
   [filter-params]
@@ -99,7 +100,7 @@
        (include-css "http://fonts.googleapis.com/css?family=Oswald:400,700,300")
        (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700")]
       [:body
-       [:div#content
+       [:div#top-content.content
         [:h1#title "The Mars Ogler"]
         [:div#blurb
          "A Curiosity Mars Science Laboratory raw images viewer"
@@ -112,7 +113,7 @@
          "How about a "
          [:a {:href "http://www.penny4nasa.org/the-mission/"} "Penny for NASA"]
          "?"
-         ]
-        (toolbar filter-params)
-        [:div#pics (pics filter-params)]
-        ]])))
+         ]]
+       (toolbar filter-params)
+       [:div#pics.content (pics filter-params)]
+       ])))
