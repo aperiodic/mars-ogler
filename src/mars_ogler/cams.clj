@@ -35,6 +35,7 @@
                           "NRA" "NavCam Right A"
                           "NRB" "NavCam Right B"
                           "CR" "ChemCam"
+                          "CR0" "ChemCam"
                           "MH" "MAHLI"
                           "MD" "MARDI"
                           "FLA" "HazCam Front-Left A"
