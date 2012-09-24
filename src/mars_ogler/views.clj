@@ -2,6 +2,7 @@
   (:require [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [clojure.string :as str]
+            [mars-ogler.cams :as cams]
             [mars-ogler.scrape :as scrape]
             [mars-ogler.times :as times])
   (:use [hiccup core page]))
@@ -20,52 +21,98 @@
     "Released " lag " later at " [:span.releasedate released] [:br]
     w [:span.x " x "] h " " type " | ID: " id]])
 
-(defn pics
+(defn parse-params
   [{:keys [cams page per-page sorting thumbs]
-    :or {cams "mahli mastcam navcam"
+    :or {cams ["mahli" "mastcam" "navcam"]
          page "1"
          per-page "25"
          sorting "released"
          thumbs "no"}}]
-  (let [page (Integer/parseInt page)
-        per-page (min (Integer/parseInt per-page) 100)
-        sorting (keyword sorting)
-        cams (->> (str/split cams #" ") (map keyword) set)
-        cam-pred (fn [img] (-> img :cam cams))
+  (let [cams' (if (vector? cams)
+                (set (map keyword cams))
+                #{(keyword cams)})
+        page' (Integer/parseInt page)
+        per-page' (Integer/parseInt per-page)
+        sorting' (keyword sorting)
+        thumbs' (keyword thumbs)]
+    {:cams cams', :page page', :per-page per-page', :sorting sorting'
+     :thumbs thumbs'}))
+
+(defn pics
+  [{:keys [cams page per-page sorting thumbs]}]
+  (let [cam-pred (fn [img] (-> img :cam cams))
         size-pred (case thumbs
-                    "no" #(not= (:size %) :thumbnail)
-                    "yes" (constantly true)
-                    "only" #(= (:size %) :thumbnail))]
+                    :no #(not= (:size %) :thumbnail)
+                    :yes (constantly true)
+                    :only #(= (:size %) :thumbnail))]
     (->> (filter (every-pred size-pred cam-pred)
                  (get @scrape/sorted-images sorting ()))
       (drop (* (dec page) per-page))
       (take per-page)
       (map pic->hiccup))))
 
+(defn toolbar
+  [{:keys [cams page per-page sorting thumbs]}]
+  (let [cam-boxes (for [cam [:hazcam :navcam :mastcam :mahli :mardi :chemcam]]
+                    [:span.option
+                     [:label
+                      [:input {:type "checkbox", :name "cams", :value cam
+                               :checked (cams cam)}
+                       (cams/cam-names-by-cam cam)]]])
+        sorting-names {:released "Date Released", :taken-utc "Date Taken"
+                       :taken-marstime "Martian Time Taken"}
+        sorting-buttons (for [sort-type [:released :taken-utc :taken-marstime]]
+                          [:span.option
+                           [:label
+                            [:input {:type "radio"
+                                     :name "sorting"
+                                     :value sort-type
+                                     :checked (= sort-type sorting)}]
+                            (sorting-names sort-type)]])]
+    [:div#toolbar
+     [:form {:action "/"}
+      [:div#cam-toggles [:span.tool-label "Cameras:"] cam-boxes]
+      [:div#sorting [:span.tool-label "Sort By:"] sorting-buttons]
+      [:div#misc
+       [:span.tool-label "Photos per Page:"]
+       [:select {:name "per-page"}
+        (for [amount [10 25 50 100]]
+          [:option {:value amount, :selected (= amount per-page)}
+           amount])]
+       " | "
+       [:span.tool-label "Thumbnails?:"]
+       (for [opt [:no :yes :only]]
+         [:span.option
+          [:label
+           [:input {:type "radio", :name "thumbs", :value opt,
+                    :checked (= opt thumbs)}]
+           (-> opt name str/capitalize)]])]
+      [:div#update [:input {:type "submit" :value "Update Settings"}]]]]))
+
 (defn index
   [filter-params]
-  (html5
-    [:head
-     [:title "The Mars Ogler"]
-     (include-css "/css/main.css")
-     (include-css "http://fonts.googleapis.com/css?family=Oswald:400,700,300")
-     (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700")]
-    [:body
-     [:div#content
-      [:h1#title "The Mars Ogler"]
-      [:div#blurb
-       "A Curiosity Mars Science Laboratory raw images viewer"
-       [:br]
-       "Built on top of "
-       [:a {:href "http://curiositymsl.com/"} "Curiosity MSL Viewer"]
-       " and "
-       [:a {:href "http://mars.jpl.nasa.gov/"} "NASA Mars Exploration"]
-       [:br]
-       "How about a "
-       [:a {:href "http://www.penny4nasa.org/the-mission/"} "Penny for NASA"]
-       "?"
-       ]
-      [:div#toolbar
-       "Eventually there will be some tools here"]
-      [:div#pics (pics filter-params)]
-      ]]))
+  (let [filter-params (parse-params filter-params)]
+    (html5
+      [:head
+       [:title "The Mars Ogler"]
+       (include-css "/css/main.css")
+       (include-css "http://fonts.googleapis.com/css?family=Oswald:400,700,300")
+       (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700")]
+      [:body
+       [:div#content
+        [:h1#title "The Mars Ogler"]
+        [:div#blurb
+         "A Curiosity Mars Science Laboratory raw images viewer"
+         [:br]
+         "Built on top of "
+         [:a {:href "http://curiositymsl.com/"} "Curiosity MSL Viewer"]
+         " and "
+         [:a {:href "http://mars.jpl.nasa.gov/"} "NASA Mars Exploration"]
+         [:br]
+         "How about a "
+         [:a {:href "http://www.penny4nasa.org/the-mission/"} "Penny for NASA"]
+         "?"
+         ]
+        (toolbar filter-params)
+        [:div#pics (pics filter-params)]
+        ]])))

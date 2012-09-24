@@ -21,6 +21,13 @@
 
 (def cams (-> (vals cams-by-abbrev) distinct set))
 
+(def cam-names-by-cam {:chemcam "ChemCam"
+                       :hazcam "HazCam"
+                       :mahli "MAHLI"
+                       :mardi "MARDI"
+                       :mastcam "MastCam"
+                       :navcam "NavCam"})
+
 (def cam-names-by-abbrev {"ML" "MastCam Left"
                           "MR" "MastCam Right"
                           "NLA" "NavCam Left A"

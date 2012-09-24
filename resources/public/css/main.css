@@ -38,6 +38,14 @@ a:visited {
   clear: both;
 }
 
+.tool-label {
+  margin-right: 0.33em;
+}
+
+.option {
+  margin-right: 0.5em;
+}
+
 .pic-wrapper {
   display: block;
   clear: both;
