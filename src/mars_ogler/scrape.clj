@@ -149,7 +149,11 @@
   (let [strs (select-keys img times/types)
         dates (into {} (for [[type date-str] strs]
                          [type (times/rfc-parser date-str)]))
-        lag (-> (time/interval (:taken-utc dates) (:released-utc dates))
+        taken (:taken-utc dates)
+        released (:released dates)
+        lag (-> (if (time/before? taken released)
+                  (time/interval taken released)
+                  (time/interval taken taken))
               times/format-interval)]
     (-> (merge img dates)
       (assoc :lag lag))))
