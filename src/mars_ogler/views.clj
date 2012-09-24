@@ -91,6 +91,18 @@
                         ; else (is empty)
                         is'))]
     [:div.pages.content {}
+     [:form {:action (str "/?" rest-qstring)}
+      [:div#goto
+       [:input {:type "hidden" :name "thumbs" :value thumbs}]
+       [:input {:type "hidden" :name "sorting" :value sorting}]
+       [:input {:type "hidden" :name "per-page" :value per-page}]
+       (for [cam cams]
+         [:input {:type "hidden" :name "cams" :value cam}])
+       [:span#goto-label "Go to "]
+       [:select {:name "page"}
+        (for [i (range 1 (inc last-page))]
+          [:option {:value i, :selected (= i page)} i])]
+       [:input {:type "submit" :value "Go!"}]]]
      (if (= page 1)
        [:div.page.limit.inactive "&lt;&lt; Prev"]
        [:a {:href (page-link (dec page))} [:div.page.limit "&lt;&lt; Prev"]])
@@ -103,18 +115,7 @@
      (if (= page last-page)
        [:div.page.limit.inactive "Next &gt;&gt;"]
        [:a {:href (page-link (inc page))} [:div.page.limit "Next &gt;&gt;"]])
-     [:form {:action (str "/?" rest-qstring)}
-      [:div#goto
-       [:input {:type "hidden" :name "thumbs" :value thumbs}]
-       [:input {:type "hidden" :name "sorting" :value sorting}]
-       [:input {:type "hidden" :name "per-page" :value per-page}]
-       (for [cam cams]
-         [:input {:type "hidden" :name "cams" :value cam}])
-       [:span#goto-label "Go to "]
-       [:select {:name "page"}
-        (for [i (range 1 (inc last-page))]
-          [:option {:value i, :selected (= i page)} i])]
-       [:input {:type "submit" :value "Go!"}]]]]))
+     ]))
 
 (defn toolbar
   [{:keys [cams page per-page sorting thumbs]}]
@@ -184,4 +185,12 @@
        (assoc pages 1 {:id "pages-top"})
        [:div#pics.content (page-pics filtered-pics filter-params)]
        (assoc pages 1 {:id "pages-bottom"})
-       ])))
+       [:div#footer.content
+        "Built by Dan Lidral-Porter. The Mars Ogler is "
+        [:a {:href "http://www.gnu.org/philosophy/free-sw.html"} "free software"]
+        "; go check out its "
+        [:a {:href "https://github.com/aperiodic/mars-ogler"} "source code"] "."
+        [:br]
+        "Did you know NASA's ability to launch missions like Curiosity is "
+        [:a {:href "http://www.planetary.org/get-involved/be-a-space-advocate/"}
+         "being threatened by budget cuts"] "?"]])))

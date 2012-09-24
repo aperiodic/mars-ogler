@@ -74,6 +74,12 @@ a:visited {
 .pages {
   margin-top: 1em;
   clear: both;
+  height: 1.5em;
+}
+
+.inactive {
+  position: relative;
+  top: -1px;
 }
 
 .pages a {
@@ -102,6 +108,7 @@ a:visited {
 .notlink {
   color: #1f150d;
   background-image: url("/img/noise.png");
+  border-radius: 0;
 }
 
 .limit {
@@ -110,9 +117,11 @@ a:visited {
 
 #goto {
   float: left;
-  height: 1.5em;
+  height: 1.55em;
   padding-left: 0.25em;
   padding-right: 0.25em;
+  margin-right: 0.75em;
+  margin-left: -0.25em;
 
   color: #f3e3c1;
   background-color: #1f150d;
@@ -176,5 +185,21 @@ a:visited {
 }
 
 #pages-bottom {
-  margin-top: 2.5em;
+  margin-top: 3em;
+}
+
+#footer {
+  clear: both;
+  float: none;
+  margin-top: 1em;
+  padding-top: 0.5em;
+  padding-bottom: 6em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+
+  position: relative;
+  left: -1.75em;
+
+  border-top: 1px solid #1f150d;
+  width: 787px;
 }
