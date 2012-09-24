@@ -4,7 +4,7 @@ body {
   color: #1f150d;
   background-image: url("/img/noise.png");
   font-size: 18px;
-  font-family: 'Source Sans Pro', Helvetica, 'sans-serif';
+  font-family: 'Source Sans Pro', Verdana, 'sans-serif';
   text-decoration: bold;
 }
 
@@ -24,7 +24,7 @@ a:visited {
 }
 
 #title {
-  font-family: 'Oswald', Helvetica, 'sans-serif';
+  font-family: 'Oswald', Verdana, 'sans-serif';
   font-size: 2.5em;
 
   float: left;
@@ -64,10 +64,75 @@ a:visited {
   margin-right: 3em;
 
   background-color: #f3e3c1;
-  border-radius: 7px;
+  border-radius: 5px;
   border: 0px;
-  font-family 'Oswald', Helvetica, 'sans-serif';
+  font-family 'Oswald', Verdana, 'sans-serif';
   font-size: 1.25em;
+  cursor: pointer;
+}
+
+.pages {
+  margin-top: 1em;
+  clear: both;
+}
+
+.pages a {
+  text-decoration: none;
+}
+
+.page {
+  float: left;
+  margin-right: 0.5em;
+  padding: 0.25em;
+  text-align: center;
+  width: 2em;
+
+  color: #f3e3c1;
+  background-color: #1f150d;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.inactive {
+  border: 1px solid #1f150d;
+  color: #1f150d;
+  background-image: url("/img/noise.png");
+}
+
+.notlink {
+  color: #1f150d;
+  background-image: url("/img/noise.png");
+}
+
+.limit {
+  width: 3.5em;
+}
+
+#goto {
+  float: left;
+  height: 1.5em;
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+
+  color: #f3e3c1;
+  background-color: #1f150d;
+  border-radius: 3px;
+  border: 0px;
+}
+
+#goto-label {
+  position: relative;
+  top: 2px;
+}
+
+#goto input {
+  margin: 0;
+  margin-left: 0.25em;
+
+  color: #1f150d;
+  background-color: #f3e3c1;
+  border-radius: 3px;
+  border: 0px;
   cursor: pointer;
 }
 
@@ -108,4 +173,8 @@ a:visited {
 
 .meridian {
   font-size: 0.9em;
+}
+
+#pages-bottom {
+  margin-top: 2.5em;
 }

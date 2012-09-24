@@ -9,8 +9,8 @@
                          params]))
 
 (defroutes ogler-routes
-  (GET "/" [& params]
-    (views/index params))
+  (GET "/" [& params :as {:keys [query-string]}]
+    (views/index (assoc params :query-string query-string)))
   (route/resources "/")
   (route/not-found "You have wandered into a maze of twisty passages, all alike"))
 
