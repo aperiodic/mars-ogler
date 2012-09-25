@@ -122,14 +122,14 @@
   [i]
   (html/html-resource (java.net.URL. (page-url i))))
 
-(defn fetch-images-since
-  [last-id]
-  (let [last-img? (fn [img] (= (:id img) last-id))]
+(defn fetch-new-images
+  [known-imgs]
+  (let [seen? (fn [img] (some #(= (:id %) (:id img)) (take 100 known-imgs)))]
     (println "Checking for new photos...")
     (loop [i 1, imgs ()]
       (let [page-imgs (body->images (fetch-page i))
-            last-page? (some last-img? page-imgs)
-            imgs' (concat imgs (take-while (complement last-img?) page-imgs))]
+            last-page? (some seen? page-imgs)
+            imgs' (concat imgs (take-while (complement seen?) page-imgs))]
         (if (or last-page? (empty? page-imgs))
           imgs'
           (do
@@ -250,8 +250,7 @@
 
 (defn fetch-tick
   [old-imgs]
-  (let [last-id (-> old-imgs first :id)
-        new-imgs (map parse-dates (fetch-images-since last-id))
+  (let [new-imgs (map parse-dates (fetch-new-images old-imgs))
         all-imgs (concat new-imgs old-imgs)]
     {:all all-imgs, :new new-imgs, :old old-imgs}))
 
