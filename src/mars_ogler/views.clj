@@ -21,23 +21,6 @@
     "Released " lag " later at " [:span.releasedate released] [:br]
     w [:span.x " x "] h " " type " | ID: " id]])
 
-(defn parse-params
-  [{:keys [cams page per-page sorting thumbs query-string]
-    :or {cams ["mahli" "mastcam" "navcam"]
-         page "1"
-         per-page "25"
-         sorting "released"
-         thumbs "no"}}]
-  (let [cams' (if (vector? cams)
-                (set (map keyword cams))
-                #{(keyword cams)})
-        page' (Integer/parseInt page)
-        per-page' (Integer/parseInt per-page)
-        sorting' (keyword sorting)
-        thumbs' (keyword thumbs)]
-    {:cams cams', :page page', :per-page per-page', :sorting sorting'
-     :thumbs thumbs', :query-string (or query-string "")}))
-
 (defn filter-pics
   [{:keys [cams sorting thumbs]}]
   (let [cam-pred (fn [img] (-> img :cam cams))
@@ -157,14 +140,13 @@
 
 (defn index
   [filter-params]
-  (let [filter-params (parse-params filter-params)
-        filtered-pics (filter-pics filter-params)
+  (let [filtered-pics (filter-pics filter-params)
         pages (page-links filtered-pics filter-params)]
     (html5
       [:head
        [:title "The Mars Ogler"]
        (include-css "/css/main.css")
-       (include-css "http://fonts.googleapis.com/css?family=Oswald:400,700,300")
+       (include-css "http://fonts.googleapis.com/css?family=Oswald:700")
        (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700")]
       [:body
        [:div#top-content.content
