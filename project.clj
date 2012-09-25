@@ -1,4 +1,4 @@
-(defproject mars-ogler "0.0.1-SNAPSHOT"
+(defproject mars-ogler "1.0.0"
   :description "Holy cow, it's Mars!"
   :url "http://github.com/aperiodic/mars-ogler"
   :license {:name "GNU Affero GPL"
