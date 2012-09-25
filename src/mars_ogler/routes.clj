@@ -12,9 +12,15 @@
                          params]))
 
 (defn parse-cookie-params
-  [{cams "cams", per-page "per-page", sorting "sorting", thumbs "thumbs"}]
-  {:cams (str/split (:value cams) #" "), :per-page (:value per-page)
-   :sorting (:value sorting), :thumbs (:value thumbs)})
+  [cookie-params]
+  (let [kw->sk {:cams "cams", :per-page "per-page", :sorting "sorting"
+                :thumbs "thumbs"}]
+    (into {} (->> (for [[kw sk] kw->sk]
+                    (if-let [v (get-in cookie-params [sk :value])]
+                      (if (= kw :cams)
+                        [kw (str/split v #" ")]
+                        [kw v])))
+               (keep identity)))))
 
 (defn parse-params
   [{:keys [cams page per-page sorting thumbs query-string]
