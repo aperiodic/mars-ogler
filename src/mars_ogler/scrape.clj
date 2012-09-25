@@ -77,6 +77,16 @@
   [_ cell]
   {:w (cell->int cell)})
 
+(defn classify-size
+  [{:keys [w h type] :as image}]
+  (let [long-dim (max w h)
+        size (cond
+               (or (= type "I") (= type "T")) :thumbnail
+               (>= long-dim 512) :large
+               (>= long-dim 256) :medium
+               :otherwise :small)]
+    (assoc image :size size)))
+
 (defn row->url
   [row]
   (let [img-link (-> (html/select row [:a]) first)]
@@ -96,7 +106,9 @@
         [label-row & img-rows] (html/select img-table [:tr])
         labels (->> (html/select label-row [:th])
                  (map (comp str/trim html/text)))]
-    (map (% row->map labels) img-rows)))
+    (->> img-rows
+      (map (% row->map labels))
+      (map classify-size))))
 
 ;;
 ;; Actually Fetching the Pages
