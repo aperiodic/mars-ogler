@@ -51,6 +51,11 @@
       [visit-recent now now]
       [visit-last visit-start now])))
 
+(defn set-expires
+  [cookies]
+  (into {} (for [[c v] cookies]
+             [c {:value v, :expires "Wed, 13-Jan-2021 22:23:01 GMT"}])))
+
 (defroutes ogler-routes
   (GET "/" [& params :as {:keys [query-string cookies]}]
     (let [[visit-last
@@ -74,7 +79,8 @@
                          :visit-recent visit-recent
                          :cams (->> (:cams parsed-params)
                                  (map name)
-                                 (str/join " "))))}))
+                                 (str/join " ")))
+                  set-expires)}))
   (route/resources "/")
   (route/not-found "You have wandered into a maze of twisty passages, all alike"))
 
