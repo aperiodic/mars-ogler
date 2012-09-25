@@ -8,18 +8,23 @@
   (:use [hiccup core page]))
 
 (defn pic->hiccup
-  [{:keys [cam cam-name id lag released size sol taken-marstime taken-utc
-           thumbnail-url type url w h]}]
-  [:div.pic-wrapper
-   [:div.pic
-    [:a {:href url} [:img {:src thumbnail-url}]]]
-   [:div.pic-info
-    [:div.title-line
-     cam-name [:span.minor " at "] [:span.marstime taken-marstime]
-     [:span.minor " on "] "Sol " sol]
-    "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
-    "Released " lag " later at " [:span.releasedate released] [:br]
-    w [:span.x " x "] h " " type " | ID: " id]])
+  [{:keys [cam cam-name id lag released released-stamp size sol taken-marstime
+           taken-utc thumbnail-url type url w h]}
+   visit-last]
+  (let [new? (> released-stamp visit-last)]
+    [:div.pic-wrapper
+     [:div.pic
+      [:a {:href url}
+       [:img {:src thumbnail-url
+              :class (if new? "new pic-img" "pic-img")}]]]
+     [:div.pic-info
+      [:div.title-line
+       cam-name [:span.minor " at "] [:span.marstime taken-marstime]
+       [:span.minor " on "] "Sol " sol]
+      "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
+      "Released " lag " later at " [:span.releasedate released]
+      (when new? " (New)") [:br]
+      w [:span.x " x "] h " " type " | ID: " id]]))
 
 (defn filter-pics
   [{:keys [cams sorting thumbs]}]
@@ -32,11 +37,11 @@
             (get @scrape/sorted-images sorting ()))))
 
 (defn page-pics
-  [pics {:keys [page per-page]}]
+  [pics {:keys [page per-page visit-last]}]
   (->> pics
     (drop (* (dec page) per-page))
     (take per-page)
-    (map pic->hiccup)))
+    (map #(pic->hiccup % visit-last))))
 
 (defn page-link
   [page rest-qstring]
@@ -97,8 +102,7 @@
            [:a {:href (page-link i)} [:div.page i]])))
      (if (= page last-page)
        [:div.page.limit.inactive "Next &gt;&gt;"]
-       [:a {:href (page-link (inc page))} [:div.page.limit "Next &gt;&gt;"]])
-     ]))
+       [:a {:href (page-link (inc page))} [:div.page.limit "Next &gt;&gt;"]])]))
 
 (defn toolbar
   [{:keys [cams page per-page sorting thumbs]}]
@@ -139,15 +143,20 @@
             (-> opt name str/capitalize)]])]]]]))
 
 (defn index
-  [filter-params]
-  (let [filtered-pics (filter-pics filter-params)
-        pages (page-links filtered-pics filter-params)]
+  [params]
+  (let [filtered-pics (filter-pics params)
+        last-visit (:visit-last params)
+        new-count (count (take-while #(> (:released-stamp %) last-visit)
+                                     (-> params
+                                       (assoc :sorting :released)
+                                       filter-pics)))
+        pages (page-links filtered-pics params)]
     (html5
       [:head
        [:title "The Mars Ogler"]
        (include-css "/css/main.css")
        (include-css "http://fonts.googleapis.com/css?family=Oswald:700")
-       (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700")]
+       (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400")]
       [:body
        [:div#top-content.content
         [:h1#title "The Mars Ogler"]
@@ -163,9 +172,12 @@
          [:a {:href "http://www.penny4nasa.org/the-mission/"} "Penny for NASA"]
          "?"
          ]]
-       (toolbar filter-params)
+       (toolbar params)
        (assoc pages 1 {:id "pages-top"})
-       [:div#pics.content (page-pics filtered-pics filter-params)]
+       [:div#pics.content
+        (when (> new-count 0)
+          [:div#new-count "Rad, there are " new-count " " [:span.new "new"] " photos!"])
+        (page-pics filtered-pics params)]
        (assoc pages 1 {:id "pages-bottom"})
        [:div#footer.content
         "Built by Dan Lidral-Porter. The Mars Ogler is "
