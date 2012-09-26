@@ -72,6 +72,7 @@
                                  :visit-recent visit-recent)
                           parse-params)]
       {:status 200
+       :headers {"Content-Type" "text/html; charset=utf-8"}
        :body (views/index parsed-params)
        :cookies (-> (select-keys params [:per-page :sorting :thumbs])
                   (assoc :visit-last visit-last
