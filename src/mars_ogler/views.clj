@@ -127,7 +127,7 @@
   [{:keys [cams page per-page sorting thumbs view]}]
   (let [grid? (= view :grid)
         sorting-names {:released "Date Released", :taken-utc "Date Taken"
-                       :taken-marstime "Martian Time Taken"}]
+                       :taken-marstime "Time of Martian Day Taken"}]
     [:div#toolbar-wrapper
      [:div#toolbar {:class (str "content "(if grid? "grid-content"))}
       [:form {:action "/"}
