@@ -24,7 +24,7 @@
       "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
       "Released " lag " later at " [:span.releasedate released]
       (when new? " (New)") [:br]
-      w [:span.x " x "] h " " type " | ID: " id]]))
+      w [:span.x " x "] h " " type " " "| ID: " [:a {:href url} id]]]))
 
 (defn pic->grid-hiccup
   [{:keys [cam-name id sol taken-marstime released-stamp thumbnail-url url]}
