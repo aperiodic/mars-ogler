@@ -51,7 +51,8 @@
         visit-start (if (nil? visit-start) now (Long/parseLong visit-start))
         visit-recent (if (nil? visit-recent) now (Long/parseLong visit-recent))]
     (if (> (- now visit-recent) (* 10 60 1000))
-      [visit-recent now now]
+      ;; curiositymsl.com updates every 15 minutes, and we scrape every minute
+      [(- visit-recent (* 16 60 1000)) now now]
       [visit-last visit-start now])))
 
 (defn set-expires
