@@ -4,9 +4,9 @@
             [clojure.string :as str]
             [compojure.route :as route]
             [compojure.handler :as handler]
-            [compojure.response :as response]
-            [mars-ogler.views :as views])
+            [compojure.response :as response])
   (:use [compojure.core :only [defroutes GET]]
+        [mars-ogler.views.index :only [index]]
         [ring.middleware cookies
                          keyword-params
                          params]))
@@ -77,7 +77,7 @@
                           parse-params)]
       {:status 200
        :headers {"Content-Type" "text/html; charset=utf-8"}
-       :body (views/index parsed-params)
+       :body (index parsed-params)
        :cookies (-> (select-keys params [:per-page :sorting :thumbs :view])
                   (assoc :visit-last visit-last
                          :visit-start visit-start
