@@ -81,9 +81,9 @@
   [{:keys [w h type] :as image}]
   (let [long-dim (max w h)
         size (cond
-               (or (= type "I") (= type "T")) :thumbnail
-               (>= long-dim 512) :large
-               (>= long-dim 256) :medium
+               (or (= type "I") (= type "T") (= type "Q")) :thumbnail
+               (>= long-dim 1024) :large
+               (>= long-dim 512) :medium
                :otherwise :small)]
     (assoc image :size size)))
 
@@ -213,10 +213,6 @@
                             resort
                             (map format-image)
                             doall)]))))
-
-;;
-;; Transformations
-;;
 
 ;;
 ;; State & Main
