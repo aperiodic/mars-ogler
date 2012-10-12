@@ -1,4 +1,4 @@
-(ns mars-ogler.views
+(ns mars-ogler.views.index
   (:require [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [clojure.string :as str]
