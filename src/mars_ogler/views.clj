@@ -185,6 +185,7 @@
     (html5
       [:head
        [:title "The Mars Ogler"]
+       [:link {:rel "shortcut icon" :href "/favicon.ico"}]
        (include-css "/css/main.css")
        (include-css "http://fonts.googleapis.com/css?family=Oswald:700")
        (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400")]
