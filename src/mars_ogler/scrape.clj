@@ -197,22 +197,53 @@
 (def format-image (comp format-dates format-type))
 
 ;;
-;; AOT Sorting
+;; Prep Images for Webserver
 ;;
+
+(def blacklist
+  "Vector of ID-intervals (both endpoints inclusive), ordered by release date."
+  [["0064ML0327000276M0_DXXX", "0064ML0327000309M0_DXXX"]
+   ["0064ML0327000031M0_DXXX", "0064ML0327000306M0_DXXX"]])
+
+(defn apply-blacklist
+  [imgs blacklist]
+  (loop [in imgs, out [], bl-pos [0 0]]
+    (if (empty? in)
+      out
+      (let [img (first in)
+            [bl-interval bl-endpoint] bl-pos]
+        (if (= (:id img) (get-in blacklist bl-pos))
+          (recur (rest in) out (if (zero? bl-endpoint)
+                                 [bl-interval 1]
+                                 [(inc bl-interval) 0]))
+          ;; else (img is not a blacklist interval endpoint)
+          (if (zero? bl-endpoint)
+            (recur (rest in) (conj out img) bl-pos)
+            (recur (rest in) out bl-pos)))))))
+
+(defn de-dupe
+  [imgs]
+  (loop [in imgs, out [], seen #{}]
+    (if-let [img (first in)]
+      (if (contains? seen (:id img))
+        (recur (rest in) out seen)
+        (recur (rest in) (conj out img) (conj seen (:id img))))
+      out)))
 
 (defn sort-images
   "The images must contain joda DateTime objects in their date keys."
   [imgs]
-  (into {} (for [time-type times/types]
-             (let [resort (case time-type
-                            :released reverse
-                            :taken-marstime identity
-                            :taken-utc reverse)]
-               [time-type (->> imgs
-                            (sort-by time-type)
-                            resort
-                            (map format-image)
-                            doall)]))))
+  (let [prepped (-> imgs de-dupe (apply-blacklist blacklist))]
+    (into {} (for [time-type times/types]
+               (let [resort (case time-type
+                              :released reverse
+                              :taken-marstime identity
+                              :taken-utc reverse)]
+                 [time-type (->> prepped
+                              (sort-by time-type)
+                              resort
+                              (map format-image)
+                              doall)])))))
 
 ;;
 ;; State & Main
