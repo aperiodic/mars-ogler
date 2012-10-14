@@ -13,7 +13,7 @@
 
 (defn parse-cookie-params
   [cookie-params]
-  (let [keys [:cams :per-page :sorting :thumbs :view]
+  (let [keys [:cams :per-page :sorting :stereo :thumbs :view]
         kw->sk (zipmap keys (map name keys))]
     (into {} (->> (for [[kw sk] kw->sk]
                     (if-let [v (get-in cookie-params [sk :value])]
@@ -23,11 +23,12 @@
                (keep identity)))))
 
 (defn parse-params
-  [{:keys [cams page per-page sorting thumbs query-string view]
+  [{:keys [cams page per-page sorting stereo thumbs query-string view]
     :or {cams ["mahli" "mastcam" "navcam"]
          page "1"
          per-page "25"
          sorting "released"
+         stereo "yes"
          thumbs "no"
          view "list"}
     :as params}]
@@ -36,13 +37,15 @@
                 #{(keyword cams)})
         page' (Integer/parseInt page)
         sorting' (keyword sorting)
+        stereo' (keyword stereo)
         thumbs' (keyword thumbs)
         view' (keyword view)
         per-page' (min (Integer/parseInt per-page)
                        (if (= view' :grid) 200 100))]
     (merge params
            {:cams cams', :page page', :per-page per-page', :sorting sorting'
-            :thumbs thumbs', :query-string (or query-string ""), :view view'})))
+            :stereo stereo', :thumbs thumbs', :query-string (or query-string "")
+            :view view'})))
 
 (defn visit-tick
   [visit-last visit-start visit-recent]
@@ -78,7 +81,8 @@
       {:status 200
        :headers {"Content-Type" "text/html; charset=utf-8"}
        :body (index parsed-params)
-       :cookies (-> (select-keys params [:per-page :sorting :thumbs :view])
+       :cookies (-> (select-keys params
+                                 [:per-page :sorting :stereo :thumbs :view])
                   (assoc :visit-last visit-last
                          :visit-start visit-start
                          :visit-recent visit-recent

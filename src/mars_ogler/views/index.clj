@@ -8,23 +8,35 @@
   (:use [hiccup core page]))
 
 (defn filter-pics
-  [{:keys [cams sorting thumbs]}]
+  [{:keys [cams sorting stereo thumbs]}]
   (let [cam-pred (fn [img] (-> img :cam cams))
         size-pred (case thumbs
                     :no #(not= (:size %) :thumbnail)
                     :yes (constantly true)
-                    :only #(= (:size %) :thumbnail))]
-    (filter (every-pred size-pred cam-pred)
+                    :only #(= (:size %) :thumbnail))
+        stereo-pred (case stereo
+                      :yes (constantly true)
+                      :only :stereo?)]
+    (filter (every-pred size-pred cam-pred stereo-pred)
             (get @images/sorted-images sorting ()))))
 
+(defn pic->href
+  [{:keys [id stereo? url]}]
+  (if-not stereo?
+    url
+    (let [partner-id (get-in @images/indices [:stereo id])
+          [l-id r-id] (sort [id partner-id])]
+      (str "/stereo?l_id=" l-id "&r_id=" r-id))))
+
 (defn pic->list-hiccup
-  [{:keys [acquired-stamp cam cam-name id lag released size sol taken-marstime
-           taken-utc thumbnail-url type url w h]}
+  [{:keys [acquired-stamp cam cam-name id lag released size sol stereo?
+           taken-marstime taken-utc thumbnail-url type url w h]
+    :as pic}
    visit-last]
   (let [new? (> acquired-stamp visit-last)]
     [:div.list-pic-wrapper
      [:div.pic.list-pic
-      [:a {:href url}
+      [:a {:href (pic->href pic)}
        [:img {:src thumbnail-url
               :class (if new? "new pic-img" "pic-img")}]]]
      [:div.pic-info
@@ -34,10 +46,12 @@
       "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
       "Released " lag " later at " [:span.releasedate released]
       (when new? " (New)") [:br]
-      w [:span.x " x "] h " " type " " "| ID: " [:a {:href url} id]]]))
+      w [:span.x " x "] h " " type " | ID: " [:a {:href (pic->href pic)} id]]]))
 
 (defn pic->grid-hiccup
-  [{:keys [acquired-stamp cam-name id sol taken-marstime thumbnail-url url]}
+  [{:keys [acquired-stamp cam-name id sol taken-marstime released-stamp
+           thumbnail-url url]
+    :as pic}
    visit-last]
   (let [new? (> acquired-stamp visit-last)
         clean-lmst (str (first (re-find #"^((\d){1,2}:\d\d)" taken-marstime))
@@ -46,7 +60,7 @@
         label (str clean-lmst " on Sol " sol "\n" id)]
     [:div.grid-pic-wrapper
      [:div.pic.grid-pic
-      [:a {:href url, :title label}
+      [:a {:href (pic->href pic), :title label}
        [:img {:class (if new? "new pic-img" "pic-img")
               :src thumbnail-url
               :alt (str cam-name " at " label)}]]]]))
@@ -67,7 +81,8 @@
     (str "/?" rest-qstring "&page=" page)))
 
 (defn page-links
-  [pics {:keys [cams page per-page sorting thumbs ^String query-string view]}]
+  [pics {:keys [cams page per-page sorting stereo
+                thumbs ^String query-string view]}]
   (let [last-page (-> (count pics) (quot per-page) inc)
         page-eq (str "page=" page)
         rest-qstring (if (.startsWith query-string "pa")
@@ -100,9 +115,10 @@
     [:div {}
      [:form {:action (str "/?" rest-qstring)}
       [:div#goto
-       [:input {:type "hidden" :name "thumbs" :value thumbs}]
-       [:input {:type "hidden" :name "sorting" :value sorting}]
        [:input {:type "hidden" :name "per-page" :value per-page}]
+       [:input {:type "hidden" :name "sorting" :value sorting}]
+       [:input {:type "hidden" :name "stereo" :value stereo}]
+       [:input {:type "hidden" :name "thumbs" :value thumbs}]
        (for [cam cams]
          [:input {:type "hidden" :name "cams" :value cam}])
        [:span#goto-label "Go to "]
@@ -124,7 +140,7 @@
        [:a {:href (page-link (inc page))} [:div.page.limit "Next &gt;&gt;"]])]))
 
 (defn toolbar
-  [{:keys [cams page per-page sorting thumbs view]}]
+  [{:keys [cams page per-page sorting stereo thumbs view]}]
   (let [grid? (= view :grid)
         sorting-names {:released "Date Released", :taken-utc "Date Taken"
                        :taken-marstime "Time of Martian Day Taken"}]
@@ -150,12 +166,19 @@
                             :value sort-type
                             :checked (= sort-type sorting)}]
             (sorting-names sort-type)]])]
-       [:div#thumbnails
+       [:div#filters
         [:span.tool-label "Show Thumbnail Photos?"]
-        (for [opt [:no :yes :only]]
+        (for [opt [:no :yes]]
           [:span.option
            [:label [:input {:type "radio", :name "thumbs", :value opt,
                             :checked (= opt thumbs)}]
+            (-> opt name str/capitalize)]])
+        "| &nbsp;"
+        [:span.tool-label "Show Stereo Pairs?"]
+        (for [opt [:yes :only]]
+          [:span.option
+           [:label [:input {:type "radio", :name "stereo", :value opt
+                            :checked (= opt stereo)}]
             (-> opt name str/capitalize)]])]
        [:div#view
         [:span.tool-label "Photos per Page:"]
