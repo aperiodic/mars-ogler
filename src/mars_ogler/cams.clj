@@ -28,7 +28,6 @@
 
 (def cams (keys cam->name))
 
-
 (def abbrev->name {"ML" "MastCam Left"
                    "MR" "MastCam Right"
                    "NLA" "NavCam Left A"
@@ -47,3 +46,9 @@
                    "RLB" "HazCam Rear-Left B"
                    "RRA" "HazCam Rear-Right A"
                    "RRB" "HazCam Rear-Right B"})
+
+(defn cam-parity
+  [cam-name]
+  (cond
+    (re-find #"Left" cam-name) :left
+    (re-find #"Right" cam-name) :right))
