@@ -15,4 +15,4 @@
   :main mars-ogler.main
   :uberjar-name "mars-ogler.jar"
   :ring {:handler mars-ogler.routes/ogler-handler
-         :init mars-ogler.scrape/setup-state!})
+         :init mars-ogler.images/setup!})

@@ -3,9 +3,19 @@
             [clj-time.coerce :as cvt-time]
             [clojure.string :as str]
             [mars-ogler.cams :as cams]
-            [mars-ogler.scrape :as scrape]
+            [mars-ogler.images :as images]
             [mars-ogler.times :as times])
   (:use [hiccup core page]))
+
+(defn filter-pics
+  [{:keys [cams sorting thumbs]}]
+  (let [cam-pred (fn [img] (-> img :cam cams))
+        size-pred (case thumbs
+                    :no #(not= (:size %) :thumbnail)
+                    :yes (constantly true)
+                    :only #(= (:size %) :thumbnail))]
+    (filter (every-pred size-pred cam-pred)
+            (get @images/sorted-images sorting ()))))
 
 (defn pic->list-hiccup
   [{:keys [cam cam-name id lag released released-stamp size sol taken-marstime
@@ -40,16 +50,6 @@
        [:img {:class (if new? "new pic-img" "pic-img")
               :src thumbnail-url
               :alt (str cam-name " at " label)}]]]]))
-
-(defn filter-pics
-  [{:keys [cams sorting thumbs]}]
-  (let [cam-pred (fn [img] (-> img :cam cams))
-        size-pred (case thumbs
-                    :no #(not= (:size %) :thumbnail)
-                    :yes (constantly true)
-                    :only #(= (:size %) :thumbnail))]
-    (filter (every-pred size-pred cam-pred)
-            (get @scrape/sorted-images sorting ()))))
 
 (defn page-pics
   [pics {:keys [page per-page view visit-last]}]

@@ -1,7 +1,8 @@
 (ns mars-ogler.main
+  (:require [mars-ogler.images :as images])
   (:use [clojure.tools.cli :only [cli]]
         [mars-ogler.routes :only [ogler-handler]]
-        [mars-ogler.scrape :only [scrape-loop! setup-state!]]
+        [mars-ogler.scrape :only [scrape-loop!]]
         [ring.adapter.jetty :only [run-jetty]])
   (:gen-class))
 
@@ -18,7 +19,7 @@
     (when (:help opts)
       (println bnnr)
       (System/exit 0))
-    (setup-state!)
+    (images/setup!)
     (if-not (:scrape opts)
       (run-jetty ogler-handler {:port port})
       (do
