@@ -7,6 +7,7 @@
             [compojure.response :as response])
   (:use [compojure.core :only [defroutes GET]]
         [mars-ogler.views.index :only [index]]
+        [mars-ogler.views.stereo :only [stereo]]
         [ring.middleware cookies
                          keyword-params
                          params]))
@@ -63,6 +64,8 @@
              [c {:value v, :expires "Wed, 13-Jan-2021 22:23:01 GMT"}])))
 
 (defroutes ogler-routes
+  (GET "/stereo" [& params]
+    (stereo params))
   (GET "/" [& params :as {:keys [query-string cookies]}]
     (let [[visit-last
            visit-start
