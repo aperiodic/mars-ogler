@@ -1,0 +1,52 @@
+body {
+  margin: 0px;
+
+  color: #f3e3c1;
+  background-image: url("/img/dark-noise.png");
+  font-size: 18px;
+  font-family: 'Source Sans Pro', Verdana, 'sans-serif';
+  font-weight: 300;
+  text-decoration: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+a {
+  color: #253657;
+}
+
+a:visited {
+  color: #cb5538;
+}
+
+#container {
+  margin-top: 8px;
+}
+
+#left {
+  text-align: center;
+}
+
+#ui {
+  margin-top: 1em;
+  text-align: center;
+}
+
+#mode-select {
+  position: relative;
+  top: -1px;
+}
+
+#footer {
+  width: 432px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 2em;
+  padding-top: 1em;
+  margin-bottom: 3em;
+
+  border-top: 1px solid #f3e3c1;
+  text-align: center;
+}
