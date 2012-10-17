@@ -45,7 +45,8 @@
 (defn id->camera
   [id]
   (let [abbrev (re-find #"[A-Z]+" id)]
-    (cams/abbrev->cam abbrev)))
+    {:cam (cams/abbrev->cam abbrev)
+     :cam-name (cams/abbrev->name abbrev)}))
 
 (defn id->type
   [id]
@@ -70,7 +71,7 @@
   [div]
   (let [rawtable (-> (html/select div [:.rawtable]) first)
         id (-> (html/select rawtable [:a]) first html/text str/trim)
-        cam (id->camera id)
+        {:keys [cam cam-name]} (id->camera id)
         type (id->type id)
         sol (->> (html/text rawtable) (re-find #"sol (\d+)") second Integer.)
         [marstime taken-utc released] (div->times div)
@@ -79,7 +80,7 @@
         url (-> (html/select div [:.rawtable :a]) first :attrs :href)
         dims (->> (re-find #"(\d+)x(\d+)" (html/text div)) (drop 1))
         [w h] (for [dim dims] (Integer/parseInt dim))]
-    {:w w, :h h, :id id, :cam cam, :type type, :sol sol
+    {:w w, :h h, :id id, :cam cam, :cam-name cam-name :type type, :sol sol
      :taken-marstime marstime :taken-utc taken-utc, :released released
      :thumbnail-url thumbnail-url, :url url}))
 
