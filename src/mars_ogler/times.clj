@@ -12,34 +12,20 @@
 (def rfc-parser (% fmt-time/parse rfc-format))
 (def rfc-printer (% fmt-time/unparse rfc-format))
 
-(def marstime-in-format (fmt-time/formatter "hh:mm:ss a"))
+(def marstime-in-format (fmt-time/formatter "hh:mm:ss a 'LMST'"))
 (def marstime-parser (% fmt-time/parse marstime-in-format))
 
 (def marstime-out-format
   (fmt-time/formatter "hh:mm <'span class=\"meridian\"'>a</'span'>"))
 (def marstime-printer (% fmt-time/unparse marstime-out-format))
 
-(def utc-in-format (fmt-time/formatter "dd MMM YYYY HH:mm:ss"))
+(def utc-in-format (fmt-time/formatter "YYYY MMM dd HH:mm:ss 'UTC'"))
 (def utc-parser (% fmt-time/parse utc-in-format))
 
 (def utc-out-format
   (fmt-time/formatter (str "h:mm <'span class=\"meridian\"'>a</'span'> 'UTC' "
                            "d MMMM YYYY")))
 (def utc-printer (% fmt-time/unparse utc-out-format))
-
-(defn cell->marstime-str
-  [cell]
-  (-> cell
-    html/text str/trim (str/replace #"\." "") marstime-parser rfc-printer))
-
-(defn cell->utc-date-str
-  [cell]
-  (let [cell-text (-> cell html/text str/trim)
-        date-bit (re-find #"\d\d \w\w\w \d\d\d\d" cell-text)
-        time-bit (re-find #"\d\d:\d\d:\d\d" cell-text)]
-    (-> (str date-bit " " time-bit)
-      utc-parser
-      rfc-printer)))
 
 (defn- format-with-units
   ([value units]

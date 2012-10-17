@@ -5,6 +5,7 @@
             :url "http://www.gnu.org/licenses/agpl"}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/tools.cli "0.2.2"]
+                 [clj-http "0.5.6"]
                  [clj-time "0.4.4"]
                  [compojure "1.1.3"]
                  [enlive "1.0.1"]

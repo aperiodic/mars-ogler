@@ -1,6 +1,7 @@
 (ns mars-ogler.scrape
   (:require [clojure.set :as set]
             [clojure.string :as str]
+            [clj-http.client :as http]
             [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [clj-time.format :as fmt-time]
@@ -8,134 +9,6 @@
             [mars-ogler.times :as times]
             [net.cgrand.enlive-html :as html]))
   (def % partial)
-
-;;
-;; Scrapin'
-;;
-
-(def cell->int (comp #(Integer/parseInt %) html/text))
-
-(defn label->cell-type
-  [label]
-  (-> label (str/split #" ") first keyword))
-
-(defmulti cell->map
-  (fn [label _] (label->cell-type label)))
-
-(defmethod cell->map :camera
-  [_ cell]
-  (let [abbrev (-> (html/text cell) str/trim)]
-    {:cam (get cams/cams-by-abbrev abbrev abbrev)
-     :cam-name (get cams/cam-names-by-abbrev abbrev abbrev)}))
-
-(defmethod cell->map :delay
-  [_ cell]
-  {:delay (cell->int cell)})
-
-(defmethod cell->map :height
-  [_ cell]
-  {:h (cell->int cell)})
-
-(defmethod cell->map :lag
-  [_ _]
-  {})
-
-(defmethod cell->map :lmst
-  [_ cell]
-  {:taken-marstime (times/cell->marstime-str cell)})
-
-(defmethod cell->map :name
-  [_ cell]
-  {:id (-> (html/text cell) str/trim)
-   :url (-> (html/select cell [:a])
-          first
-          (get-in [:attrs :href]))})
-
-(defmethod cell->map :released
-  [_ cell]
-  {:released (times/cell->utc-date-str cell)})
-
-(defmethod cell->map :sol
-  [_ cell]
-  {:sol (cell->int cell)})
-
-(defmethod cell->map :taken
-  [_ cell]
-  {:taken-utc (times/cell->utc-date-str cell)})
-
-(defmethod cell->map :thumbnail
-  [_ cell]
-  {:thumbnail-url (-> (html/select cell [:img])
-                    first
-                    (get-in [:attrs :src]))})
-
-(defmethod cell->map :type
-  [_ cell]
-  {:type (-> (html/text cell) str/trim)})
-
-(defmethod cell->map :width
-  [_ cell]
-  {:w (cell->int cell)})
-
-(defn classify-size
-  [{:keys [w h type] :as image}]
-  (let [long-dim (max w h)
-        size (cond
-               (or (= type "I") (= type "T") (= type "Q")) :thumbnail
-               (>= long-dim 1024) :large
-               (>= long-dim 512) :medium
-               :otherwise :small)]
-    (assoc image :size size)))
-
-(defn row->url
-  [row]
-  (let [img-link (-> (html/select row [:a]) first)]
-    (get-in img-link [:attrs :href])))
-
-(defn row->map
-  [labels row]
-  (let [cell-data (->> (html/select row [:td])
-                    (map cell->map labels)
-                    (apply merge))
-        row-data {:url (row->url row)}]
-    (merge cell-data row-data)))
-
-(defn body->images
-  [body-node]
-  (let [img-table (-> (html/select body-node [:table]) last)
-        [label-row & img-rows] (html/select img-table [:tr])
-        labels (->> (html/select label-row [:th])
-                 (map (comp str/trim html/text)))]
-    (->> img-rows
-      (map (% row->map labels))
-      (map classify-size))))
-
-;;
-;; Actually Fetching the Pages
-;;
-
-(defn page-url
-  ([] (page-url 1))
-  ([i] (str "http://curiositymsl.com/?page=" i "&limit=100")))
-
-(defn fetch-page
-  [i]
-  (html/html-resource (java.net.URL. (page-url i))))
-
-(defn fetch-new-images
-  [known-imgs]
-  (let [seen? (fn [img] (some #(= (:id %) (:id img)) (take 100 known-imgs)))]
-    (println "Checking for new photos...")
-    (loop [i 1, imgs ()]
-      (let [page-imgs (body->images (fetch-page i))
-            last-page? (some seen? page-imgs)
-            imgs' (concat imgs (take-while (complement seen?) page-imgs))]
-        (if (or last-page? (empty? page-imgs))
-          imgs'
-          (do
-            (Thread/sleep 500) ; ratelimit ourselves
-            (println "Oh boy, there's a lot! Fetching page" (inc i))
-            (recur (inc i) imgs')))))))
 
 ;;
 ;; Date Parsing/Unparsing
@@ -164,6 +37,100 @@
     (-> (into img (for [[type date] dates]
                     [type (times/rfc-printer date)]))
       (dissoc :lag :released-stamp))))
+
+;;
+;; Scrapin'
+;;
+
+(defn id->camera
+  [id]
+  (let [abbrev (re-find #"[A-Z]+" id)]
+    (cams/abbrev->cam abbrev)))
+
+(defn id->type
+  [id]
+  (let [mast-mahli-mardi #"([A-Z])\d_"
+        nav-chem-haz #"_([A-Z])"]
+    (if-let [type (second (re-find mast-mahli-mardi id))]
+      type
+      (second (re-find nav-chem-haz id)))))
+
+(defn div->times
+  [div]
+  (let [[marstime taken released] (-> div
+                                    (html/select [:.rawtable]), first
+                                    (html/select [:tr]), second
+                                    (html/select [:td])
+                                    (->> (map #(-> % :content second str/trim))))]
+    [(-> marstime (str/replace #"\." "") times/marstime-parser times/rfc-printer)
+     (-> taken times/utc-parser times/rfc-printer)
+     (-> released times/utc-parser times/rfc-printer)]))
+
+(defn div->map
+  [div]
+  (let [rawtable (-> (html/select div [:.rawtable]) first)
+        id (-> (html/select rawtable [:a]) first html/text str/trim)
+        cam (id->camera id)
+        type (id->type id)
+        sol (->> (html/text rawtable) (re-find #"sol (\d+)") second Integer.)
+        [marstime taken-utc released] (div->times div)
+        thumbnail-url (-> (html/select div [:.thumbnail :a :img])
+                        first :attrs :src)
+        url (-> (html/select div [:.rawtable :a]) first :attrs :href)
+        dims (->> (re-find #"(\d+)x(\d+)" (html/text div)) (drop 1))
+        [w h] (for [dim dims] (Integer/parseInt dim))]
+    {:w w, :h h, :id id, :cam cam, :type type, :sol sol
+     :taken-marstime marstime :taken-utc taken-utc, :released released
+     :thumbnail-url thumbnail-url, :url url}))
+
+(defn classify-size
+  [{:keys [w h type] :as image}]
+  (let [long-dim (max w h)
+        size (cond
+               (or (= type "I") (= type "T") (= type "Q")) :thumbnail
+               (>= long-dim 1024) :large
+               (>= long-dim 512) :medium
+               :otherwise :small)]
+    (assoc image :size size)))
+
+(defn body->images
+  [body-node]
+  (let [image-divs (html/select body-node [:body :> :div])]
+    (->> image-divs
+      (map div->map)
+      (map classify-size)
+      (map parse-dates))))
+
+;;
+;; Actually Fetching the Pages
+;;
+
+(defn fetch-page
+  [i]
+  (let [page (:body (http/post
+                      "http://curiositymsl.com/localphp/loadmore.php"
+                      {:headers {"X-Requested-With" "XMLHttpRequest"}
+                       :form-params {:q "", :z "UTC", :s "etreleased",
+                                     :o "desc", :n 100
+                                     :start (* (dec i) 100)}}))
+        tmp-file "/tmp/ogle-scrape"]
+    (spit tmp-file page)
+    (-> (html/html-resource (java.io.File. tmp-file)) first)))
+
+(defn fetch-new-images
+  [known-imgs]
+  (let [seen? (fn [img] (some #(= (:id %) (:id img)) (take 100 known-imgs)))]
+    (println "Checking for new photos...")
+    (loop [i 1, imgs ()]
+      (let [page-imgs (body->images (fetch-page i))
+            last-page? (some seen? page-imgs)
+            imgs' (concat imgs (take-while (complement seen?) page-imgs))]
+        (if (or last-page? (empty? page-imgs))
+          imgs'
+          (do
+            (Thread/sleep 500) ; ratelimit ourselves
+            (println "Oh boy, there's a lot! Fetching page" (inc i))
+            (recur (inc i) imgs')))))))
 
 ;;
 ;; Formatting
@@ -278,7 +245,7 @@
 
 (defn fetch-tick
   [old-imgs]
-  (let [new-imgs (map parse-dates (fetch-new-images old-imgs))
+  (let [new-imgs (fetch-new-images old-imgs)
         all-imgs (concat new-imgs old-imgs)]
     {:all all-imgs, :new new-imgs, :old old-imgs}))
 

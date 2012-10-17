@@ -140,7 +140,7 @@
           [:span.option
            [:label [:input {:type "checkbox", :name "cams", :value cam
                             :checked (cams cam)}]
-            (cams/cam-names-by-cam cam)]])]
+            (cams/cam->name cam)]])]
        [:div#sorting
         [:span.tool-label "Sort By:"]
         (for [sort-type [:released :taken-utc :taken-marstime]]
