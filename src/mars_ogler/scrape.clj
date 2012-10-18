@@ -110,9 +110,10 @@
   [i]
   (let [page (:body (http/post
                       "http://curiositymsl.com/localphp/loadmore.php"
-                      {:headers {"X-Requested-With" "XMLHttpRequest"}
+                      {:headers {"Cookie" "PHPSESSID=3v55ibi7c0l25836c2chenpmo1"
+                                 "X-Requested-With" "XMLHttpRequest"}
                        :form-params {:q "", :z "UTC", :s "etreleased",
-                                     :o "desc", :n 100
+                                     :l "all" :o "desc", :n 100
                                      :start (* (dec i) 100)}}))
         tmp-file "/tmp/ogle-scrape"]
     (spit tmp-file page)
