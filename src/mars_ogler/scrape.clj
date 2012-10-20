@@ -275,7 +275,7 @@
                (when-not (empty? new)
                  (update-states! all)
                  (reset! backup-imgs all))
-               (Thread/sleep (* 60 1000))
+               (Thread/sleep (* 5 60 1000))
                (recur all)))
         (catch Throwable err
           (let [cause (.getCause err)
