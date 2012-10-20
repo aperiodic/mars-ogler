@@ -272,7 +272,8 @@
 
 (defn scrape-loop!
   []
-  (let [backup-imgs (atom (get-cached-images))]
+  (let [backup-imgs (atom (get-cached-images))
+        scrape-period (* 15 60 1000)] ; 15 minutes
     (while true
       (try (loop [imgs @backup-imgs]
              (let [{:keys [new old all]} (fetch-tick imgs)]
@@ -280,7 +281,7 @@
                (when-not (empty? new)
                  (update-states! all)
                  (reset! backup-imgs all))
-               (Thread/sleep (* 5 60 1000))
+               (Thread/sleep scrape-period)
                (recur all)))
         (catch Throwable err
           (let [cause (.getCause err)
@@ -288,4 +289,4 @@
                              (and cause
                                   (str " caused by: ") (.getMessage cause)))]
             (println "Had some trouble in the scrape loop:" err-msg))
-          (Thread/sleep (* 60 1000)))))))
+          (Thread/sleep scrape-period))))))
