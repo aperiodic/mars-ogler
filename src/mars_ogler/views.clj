@@ -8,10 +8,10 @@
   (:use [hiccup core page]))
 
 (defn pic->list-hiccup
-  [{:keys [cam cam-name id lag released released-stamp size sol taken-marstime
+  [{:keys [acquired-stamp cam cam-name id lag released size sol taken-marstime
            taken-utc thumbnail-url type url w h]}
    visit-last]
-  (let [new? (> released-stamp visit-last)]
+  (let [new? (> acquired-stamp visit-last)]
     [:div.list-pic-wrapper
      [:div.pic.list-pic
       [:a {:href url}
@@ -27,9 +27,9 @@
       w [:span.x " x "] h " " type " " "| ID: " [:a {:href url} id]]]))
 
 (defn pic->grid-hiccup
-  [{:keys [cam-name id sol taken-marstime released-stamp thumbnail-url url]}
+  [{:keys [acquired-stamp cam-name id sol taken-marstime thumbnail-url url]}
    visit-last]
-  (let [new? (> released-stamp visit-last)
+  (let [new? (> acquired-stamp visit-last)
         clean-lmst (str (first (re-find #"^((\d){1,2}:\d\d)" taken-marstime))
                         " "
                         (first (re-find #"(PM|AM)" taken-marstime)))
@@ -176,10 +176,10 @@
   [{:keys [view] :as params}]
   (let [filtered-pics (filter-pics params)
         last-visit (:visit-last params)
-        new-count (count (take-while #(> (:released-stamp %) last-visit)
-                                     (-> params
-                                       (assoc :sorting :released)
-                                       filter-pics)))
+        new-count (-> (take-while
+                        #(> (:acquired-stamp %) last-visit)
+                        (filter-pics (assoc params :sorting :released)))
+                    count)
         pages (page-links filtered-pics params)
         grid? (= view :grid)]
     (html5

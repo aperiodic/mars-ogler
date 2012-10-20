@@ -6,7 +6,7 @@
             [net.cgrand.enlive-html :as html]))
   (def % partial)
 
-(def types #{:released :taken-marstime :taken-utc})
+(def types #{:acquired :released :taken-marstime :taken-utc})
 
 (def rfc-format (fmt-time/formatters :rfc822))
 (def rfc-parser (% fmt-time/parse rfc-format))

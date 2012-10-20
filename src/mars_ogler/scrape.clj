@@ -27,16 +27,20 @@
         lag (-> (if (time/before? taken released)
                   (time/interval taken released)
                   (time/interval taken taken))
-              times/format-interval)]
+              times/format-interval)
+        acquired (:acquired dates)
+        acquired-stamp (if acquired
+                         (cvt-time/to-long acquired)
+                         0)]
     (-> (merge img dates)
-      (assoc :lag lag, :released-stamp (cvt-time/to-long released)))))
+      (assoc :lag lag, :acquired-stamp acquired-stamp))))
 
 (defn unparse-dates
   [img]
   (let [dates (select-keys img times/types)]
     (-> (into img (for [[type date] dates]
                     [type (times/rfc-printer date)]))
-      (dissoc :lag :released-stamp))))
+      (dissoc :lag :acquired-stamp))))
 
 ;;
 ;; Scrapin'
@@ -65,7 +69,8 @@
                                     (->> (map #(-> % :content second str/trim))))]
     [(-> marstime (str/replace #"\." "") times/marstime-parser times/rfc-printer)
      (-> taken times/utc-parser times/rfc-printer)
-     (-> released times/utc-parser times/rfc-printer)]))
+     (-> released times/utc-parser times/rfc-printer)
+     (-> (time/now) times/rfc-printer)]))
 
 (defn div->map
   [div]
@@ -74,7 +79,7 @@
         {:keys [cam cam-name]} (id->camera id)
         type (id->type id)
         sol (->> (html/text rawtable) (re-find #"sol (\d+)") second Integer.)
-        [marstime taken-utc released] (div->times div)
+        [marstime taken-utc released acquired] (div->times div)
         thumbnail-url (-> (html/select div [:.thumbnail :a :img])
                         first :attrs :src)
         url (-> (html/select div [:.rawtable :a]) first :attrs :href)
@@ -82,7 +87,7 @@
         [w h] (for [dim dims] (Integer/parseInt dim))]
     {:w w, :h h, :id id, :cam cam, :cam-name cam-name :type type, :sol sol
      :taken-marstime marstime :taken-utc taken-utc, :released released
-     :thumbnail-url thumbnail-url, :url url}))
+     :acquired acquired, :thumbnail-url thumbnail-url, :url url}))
 
 (defn classify-size
   [{:keys [w h type] :as image}]
@@ -204,7 +209,7 @@
   "The images must contain joda DateTime objects in their date keys."
   [imgs]
   (let [prepped (-> imgs de-dupe (apply-blacklist blacklist))]
-    (into {} (for [time-type times/types]
+    (into {} (for [time-type (disj times/types :acquired)]
                (let [resort (case time-type
                               :released reverse
                               :taken-marstime identity
