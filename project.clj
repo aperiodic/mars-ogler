@@ -10,8 +10,8 @@
                  [compojure "1.1.3"]
                  [enlive "1.0.1"]
                  [hiccup "1.0.0"]
-                 [ring/ring-core "1.1.5"]
-                 [ring/ring-jetty-adapter "1.1.5"]]
+                 [ring/ring-core "1.1.6"]
+                 [ring/ring-jetty-adapter "1.1.6"]]
   :plugins [[lein-ring "0.7.1"]]
   :main mars-ogler.main
   :uberjar-name "mars-ogler.jar"
