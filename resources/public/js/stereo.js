@@ -28,6 +28,7 @@ var stereogram_prep = function () {
   $('#right').removeClass('hidden');
 };
 
+
 var wiggle_ms = 333;
 
 var wiggle_position = function () {
@@ -45,12 +46,21 @@ var wiggle_prep = function () {
   window.setTimeout('wiggle_tick();', wiggle_ms);
 };
 
+var wiggle_cleanup = function () {
+  $('#left').css('float', 'left');
+  $('#right').removeClass('hidden');
+  $('#right').css('position', '');
+  $('#right').css('top', '');
+  $('#right').css('left', '');
+}
+
 var wiggle_tick = function () {
   if ($mode === 'wiggle') {
     $('#right').toggleClass('hidden');
     window.setTimeout('wiggle_tick();', wiggle_ms);
   }
 };
+
 
 var mode_prep = function () {
   if ($mode === 'stereo-cross' || $mode === 'stereo-wall') {
@@ -67,7 +77,32 @@ var mode_prep = function () {
   }
 };
 
-$(document).ready(function(){
+var mode_cleanup = function (old_mode) {
+  switch(old_mode) {
+    case 'wiggle':
+      wiggle_cleanup();
+      break;
+  }
+}
+
+var mode_select = function () {
+  var new_mode = $('#mode-select').find(':selected').attr('value');
+  var old_mode = $mode;
+
+  mode_cleanup(old_mode);
+  $mode = new_mode;
+  mode_prep();
+}
+
+$(window).resize(function () {
+  if ($mode === 'stereo-cross' || $mode === 'stereo-wall') {
+    stereogram_position();
+  } else if ($mode === 'wiggle') {
+    wiggle_position();
+  }
+});
+
+$(document).ready(function () {
   left_url = $('#left-img').attr('src');
   right_url = $('#right-img').attr('src');
   orig_width = $('#left-img').width();
@@ -78,12 +113,5 @@ $(document).ready(function(){
   $('option[value=' + $mode + ']').attr('selected', true);
 
   mode_prep();
-});
-
-$(window).resize(function(){
-  if ($mode === 'stereo-cross' || $mode === 'stereo-wall') {
-    stereogram_position();
-  } else if ($mode === 'wiggle') {
-    wiggle_position();
-  }
+  $('#mode-select').change(mode_select);
 });

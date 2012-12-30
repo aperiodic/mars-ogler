@@ -29,6 +29,10 @@ a:visited {
   text-align: center;
 }
 
+#right {
+  text-align: right;
+}
+
 #ui {
   margin-top: 1em;
   text-align: center;
