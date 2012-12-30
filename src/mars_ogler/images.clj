@@ -32,16 +32,20 @@
         lag (-> (if (time/before? taken released)
                   (time/interval taken released)
                   (time/interval taken taken))
-              times/format-interval)]
+              times/format-interval)
+        acquired (:acquired dates)
+        acquired-stamp (if acquired
+                         (cvt-time/to-long acquired)
+                         0)]
     (-> (merge img dates)
-      (assoc :lag lag, :released-stamp (cvt-time/to-long released)))))
+      (assoc :lag lag, :acquired-stamp acquired-stamp))))
 
 (defn unparse-dates
   [img]
   (let [dates (select-keys img times/types)]
     (-> (into img (for [[type date] dates]
                     [type (times/rfc-printer date)]))
-      (dissoc :lag :released-stamp))))
+      (dissoc :lag :acquired-stamp))))
 
 ;;
 ;; Formatting
@@ -128,7 +132,7 @@
 (defn sort-images
   "The images must contain joda DateTime objects in their date keys."
   [imgs]
-  (into {} (for [time-type times/types]
+  (into {} (for [time-type (disj times/types :acquired)]
              (let [resort (case time-type
                             :released reverse
                             :taken-marstime identity
