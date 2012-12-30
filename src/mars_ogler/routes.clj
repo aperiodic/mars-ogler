@@ -1,16 +1,21 @@
 (ns mars-ogler.routes
-  (:require [clj-time.core :as time]
+  (:require [clj-http.client :as http]
+            [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [clojure.string :as str]
             [compojure.route :as route]
             [compojure.handler :as handler]
-            [compojure.response :as response])
+            [compojure.response :as response]
+            [mars-ogler.times :as times])
   (:use [compojure.core :only [defroutes GET]]
         [mars-ogler.views.index :only [index]]
         [mars-ogler.views.stereo :only [stereo]]
         [ring.middleware cookies
                          keyword-params
                          params]))
+
+(def img-root "http://mars.jpl.nasa.gov")
+(def expiration-date "Sun, 17 Jan 2038 19:14:07 GMT")
 
 (defn parse-cookie-params
   [cookie-params]
@@ -62,9 +67,21 @@
 (defn set-expires
   [cookies]
   (into {} (for [[c v] cookies]
-             [c {:value v, :expires "Wed, 13-Jan-2021 22:23:01 GMT"}])))
+             [c {:value v, :expires expiration-date}])))
 
 (defroutes ogler-routes
+  (GET "/msl-raw-images/*" [* :as {{:strs [if-modified-since]} :headers}]
+    (if if-modified-since ; note that we assume the images never change
+      {:status 304
+       :headers {"Date" (times/current-date), "Expires" expiration-date}}
+      ; else (no if-modified-since header)
+      (let [img-url (str img-root "/msl-raw-images/" *)
+            img-bytes (-> (http/get img-url {:as :byte-array}) :body)]
+        {:status 200
+         :headers {"Content-Type" "image/jpg"
+                   "Expires" expiration-date
+                   "Last-Modified" (times/current-date)}
+         :body (java.io.ByteArrayInputStream. img-bytes)})))
   (GET "/stereo" [& params]
     (stereo params))
   (GET "/" [& params :as {:keys [query-string cookies]}]

@@ -12,7 +12,10 @@
 (def rfc-parser (% fmt-time/parse rfc-format))
 (def rfc-printer (% fmt-time/unparse rfc-format))
 
-(def marstime-in-format (fmt-time/formatter "hh:mm:ss a 'LMST'"))
+(defn current-date []
+  (fmt-time/unparse rfc-format (time/now)))
+
+(def marstime-in-format (fmt-time/formatter "HH:mm:ss a 'LMST'"))
 (def marstime-parser (% fmt-time/parse marstime-in-format))
 
 (def marstime-out-format
