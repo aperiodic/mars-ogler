@@ -34,7 +34,10 @@
                          :width (:w l-img), :height (:h l-img)}]]
         [:div#right.hidden
          [:img#right-img {:src r-path
-                          :width (:w r-img), :height (:h r-img)}]]]
+                          :width (:w r-img), :height (:h r-img)}]]
+        [:div#anaglyph.hidden
+         [:canvas#anaglyph-canvas
+          {:width (:w l-img), :height (:h l-img)}]]]
        [:div#ui
         [:span#mode-label "Viewing Mode: "]
         [:select#mode-select {:disabled true}

@@ -33,6 +33,12 @@ a:visited {
   text-align: right;
 }
 
+#anaglyph {
+  position: absolute;
+  top: 8px;
+  text-align: center;
+}
+
 #ui {
   margin-top: 1em;
   text-align: center;
