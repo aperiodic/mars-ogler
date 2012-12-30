@@ -1,39 +1,12 @@
 (ns mars-ogler.scrape
-  (:require [clojure.string :as str]
+  (:require [clj-http.client :as http]
+            [clj-time.core :as time]
+            [clojure.string :as str]
             [mars-ogler.cams :as cams]
             [mars-ogler.images :as images]
             [mars-ogler.times :as times]
             [net.cgrand.enlive-html :as html]))
   (def % partial)
-
-;;
-;; HTML -> Information
-;;
-
-(defn parse-dates
-  [img]
-  (let [strs (select-keys img times/types)
-        dates (into {} (for [[type date-str] strs]
-                         [type (times/rfc-parser date-str)]))
-        taken (:taken-utc dates)
-        released (:released dates)
-        lag (-> (if (time/before? taken released)
-                  (time/interval taken released)
-                  (time/interval taken taken))
-              times/format-interval)
-        acquired (:acquired dates)
-        acquired-stamp (if acquired
-                         (cvt-time/to-long acquired)
-                         0)]
-    (-> (merge img dates)
-      (assoc :lag lag, :acquired-stamp acquired-stamp))))
-
-(defn unparse-dates
-  [img]
-  (let [dates (select-keys img times/types)]
-    (-> (into img (for [[type date] dates]
-                    [type (times/rfc-printer date)]))
-      (dissoc :lag :acquired-stamp))))
 
 ;;
 ;; Scrapin'
@@ -98,7 +71,7 @@
     (->> image-divs
       (map div->map)
       (map classify-size)
-      (map parse-dates))))
+      (map images/parse-dates))))
 
 ;;
 ;; Fetching Stuff Over the Tubes
@@ -147,7 +120,7 @@
 
 (defn fetch-tick
   [old-imgs]
-  (let [new-imgs (map images/parse-dates (fetch-new-images old-imgs))
+  (let [new-imgs (fetch-new-images old-imgs)
         all-imgs (concat new-imgs old-imgs)]
     {:all all-imgs, :new new-imgs, :old old-imgs}))
 
