@@ -49,8 +49,7 @@
       w [:span.x " x "] h " " type " | ID: " [:a {:href (pic->href pic)} id]]]))
 
 (defn pic->grid-hiccup
-  [{:keys [acquired-stamp cam-name id sol taken-marstime released-stamp
-           thumbnail-url url]
+  [{:keys [acquired-stamp cam-name id sol taken-marstime thumbnail-url url]
     :as pic}
    visit-last]
   (let [new? (> acquired-stamp visit-last)
