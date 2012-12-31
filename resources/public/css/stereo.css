@@ -49,6 +49,16 @@ a:visited {
   top: -1px;
 }
 
+#anaglyph-slider-label {
+  margin-left: 1em;
+}
+
+#anaglyph-slider {
+  width: 250px;
+  position: relative;
+  top: 3px;
+}
+
 #footer {
   width: 432px;
   margin-left: auto;

@@ -72,56 +72,97 @@ var wiggle_tick = function () {
 // Anaglyph
 //
 
-var have_anaglyph = false;
+var pix_cached = false;
+var l_pix, r_pix;
 
 var anaglyph_position = function () {
-  $('#anaglyph').css('left', ($(window).width() - orig_width)/2 + 'px');
+  var cw = $('#anaglyph-canvas')[0].width;
+  $('#anaglyph').css('left', ($(window).width() - cw)/2 + 'px');
+}
+
+var draw_anaglyph = function () {
+  var l_img = document.getElementById('left-img');
+  var r_img = document.getElementById('right-img');
+  var iw = l_img.getAttribute('nominal-width') * 1;
+  var ih = l_img.getAttribute('nominal-height') * 1;
+  var i_pindex = function (x, y) { return 4*((y * iw) + x); };
+
+  var canvas = document.getElementById('anaglyph-canvas');
+  var g = canvas.getContext('2d');
+  var cw = canvas.width;
+  var ch = canvas.height;
+  var c_pindex = function (x, y) { return 4*((y * cw) + x); };
+
+  var anaglyph_gutter = (cw - iw)/2;
+  var anaglyph_offset = document.getElementById('anaglyph-slider').value * 1;
+
+  if (!pix_cached) {
+    // load image pixel data
+    g.drawImage(l_img, 0, 0);
+    l_pix = g.getImageData(0, 0, iw, ih).data;
+    g.drawImage(r_img, 0, 0);
+    r_pix = g.getImageData(0, 0, iw, ih).data;
+    pix_cached = true;
+  }
+
+  var anaglyph_image_data = g.createImageData(cw, ch);
+  var a_pix = anaglyph_image_data.data;
+  a_pix.length = l_pix.length;
+
+  var l_x_off = anaglyph_gutter + anaglyph_offset;
+  var r_x_off = anaglyph_gutter - anaglyph_offset;
+  for (var y = 0; y < ih; y++) {
+    for (var x = 0; x < iw; x++) {
+      var src_index = i_pindex(x, y);
+      var l_dest_index = c_pindex(x + l_x_off, y);
+      var r_dest_index = c_pindex(x + r_x_off, y);
+      // right image goes to red channel, left to blue & green
+      a_pix[r_dest_index + 2] = r_pix[src_index];
+      a_pix[l_dest_index + 0] = l_pix[src_index];
+      a_pix[l_dest_index + 3] = l_pix[src_index];
+      // make both destination pixels fully opaque
+      a_pix[r_dest_index + 1] = 255;
+      a_pix[l_dest_index + 1] = 255;
+    }
+  }
+
+  // draw the anaglyph
+  g.putImageData(anaglyph_image_data, 0, 0);
 }
 
 var anaglyph_prep = function () {
-  var img_h = $('#left-img')[0].height;
   $('#left').addClass('hidden');
   $('#right').addClass('hidden');
 
-  if (!have_anaglyph) {
-    var l_img = document.getElementById('left-img');
-    var r_img = document.getElementById('right-img');
-    var canvas = document.getElementById('anaglyph-canvas');
-    var g = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-
-    // load image pixel data
-    g.drawImage(l_img, 0, 0);
-    var l_pixels = g.getImageData(0, 0, w, h).data;
-    g.drawImage(r_img, 0, 0);
-    var r_pixels = g.getImageData(0, 0, w, h).data;
-
-    // build anaglyph pixel data -- left in red channel, right in blue & green
-    var anaglyph_image_data = g.createImageData(w, h);
-    var anaglyph_pixels = anaglyph_image_data.data;
-    anaglyph_pixels.length = l_pixels.length;
-    for (var i = 0; i < l_pixels.length; i += 4) {
-      anaglyph_pixels[i] = l_pixels[i];
-      anaglyph_pixels[i+1] = r_pixels[i];
-      anaglyph_pixels[i+2] = r_pixels[i];
-      anaglyph_pixels[i+3] = 255;
-    }
-
-    // draw anaglyph
-    g.putImageData(anaglyph_image_data, 0, 0);
-
-    have_anaglyph = true;
+  // see if the canvas is there already
+  var canvas = document.getElementById('anaglyph-canvas');
+  if (!canvas) {
+    // if not, create canvas and stick it in the DOM
+    canvas = document.createElement('canvas');
+    canvas.id = 'anaglyph-canvas';
+    canvas.width = $(window).width() - 20;
+    canvas.height = $('#left-img').attr('nominal-height');
+    $('#anaglyph').append(canvas);
   }
 
-  $('#container').css('height', img_h + gutter/2);
+  var ih = $('#left-img').attr('nominal-height') * 1;
+  var iw = $('#left-img').attr('nominal-width') * 1;
+  $('#container').css('height', ih + gutter/2);
+  var slider = document.getElementById('anaglyph-slider');
+  slider.setAttribute('max', (canvas.width - iw)/2);
+  slider.value = 0;
+
+  draw_anaglyph();
+
   $('#anaglyph').removeClass('hidden');
+  $('#anaglyph-ui').removeClass('hidden');
 
   anaglyph_position();
 };
 
 var anaglyph_cleanup = function () {
   $('#anaglyph').addClass('hidden');
+  $('#anaglyph-ui').addClass('hidden');
   $('#left').removeClass('hidden');
   $('#right').removeClass('hidden');
   $('#container').css('height', '');
@@ -193,4 +234,22 @@ $(document).ready(function () {
 
   mode_prep();
   $('#mode-select').change(mode_select);
+  $('#anaglyph-slider').change(draw_anaglyph);
 });
+
+//
+// HTML5 Input Range Polyfill for Friggin' Firefox
+// See https://github.com/freqdec/fd-slider
+//
+
+Modernizr.load([
+{ test: Modernizr.inputtypes.range
+, nope: [ 'http://www.frequency-decoder.com/demo/fd-slider/css/fd-slider.mhtml.min.css'
+        , 'http://www.frequency-decoder.com/demo/fd-slider/js/fd-slider.js'
+        ]
+, callback: function(id, testResult) {
+    if ("fdSlider" in window && typeof (fdSlider.onDomReady) != "undefined") {
+      try { fdSlider.onDomReady(); } catch(err) {};
+    };
+  }
+}]);
