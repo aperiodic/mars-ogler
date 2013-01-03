@@ -117,12 +117,12 @@ var draw_anaglyph = function () {
       var l_dest_index = c_pindex(x + l_x_off, y);
       var r_dest_index = c_pindex(x + r_x_off, y);
       // right image goes to red channel, left to blue & green
-      a_pix[r_dest_index + 2] = r_pix[src_index];
-      a_pix[l_dest_index + 0] = l_pix[src_index];
-      a_pix[l_dest_index + 3] = l_pix[src_index];
+      a_pix[r_dest_index + 0] = r_pix[src_index];
+      a_pix[l_dest_index + 1] = l_pix[src_index];
+      a_pix[l_dest_index + 2] = l_pix[src_index];
       // make both destination pixels fully opaque
-      a_pix[r_dest_index + 1] = 255;
-      a_pix[l_dest_index + 1] = 255;
+      a_pix[r_dest_index + 3] = 255;
+      a_pix[l_dest_index + 3] = 255;
     }
   }
 
