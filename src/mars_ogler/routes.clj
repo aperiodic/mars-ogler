@@ -83,11 +83,11 @@
          :body (java.io.ByteArrayInputStream. img-bytes)})))
   (GET "/stereo" [& params :as {:keys [cookies]}]
     (let [params (merge params (parse-cookie-params cookies [:stereo-mode]))]
-      (println params)
       (stereo params)))
   (GET "/stereo-cookie" [mode]
        {:status 200
-        :cookies (set-expires {:stereo-mode mode})})
+        :cookies (set-expires {:stereo-mode mode})
+        :body "<html></html>"})
   (GET "/" [& params :as {:keys [query-string cookies]}]
     (let [[visit-last
            visit-start

@@ -64,6 +64,12 @@ a:visited {
   top: 3px;
 }
 
+#fd-slider-anaglyph-slider {
+  width: 250px;
+  float: right;
+  margin-right: 3em;
+}
+
 #footer {
   width: 532px;
   margin-left: auto;

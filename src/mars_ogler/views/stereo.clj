@@ -48,7 +48,8 @@
             (mode->name mode)])]
         [:span.anaglyph-ui.hidden
          [:span#anaglyph-slider-label "Alignment: "]
-         [:input#anaglyph-slider {:type "range", :min 0, :max -1, :step 1}]]
+         [:input#anaglyph-slider {:type "range",
+                                  :min 0, :max -1, :step 1}]]
         [:span#no-js "Sorry, the stereo pair viewer requires Javascript"]]
        [:div.anaglyph-ui.hidden "Having trouble aligning? Try making your window wider and refreshing."]
        [:div#footer

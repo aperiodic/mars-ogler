@@ -167,6 +167,9 @@ var anaglyph_prep = function () {
   var slider = document.getElementById('anaglyph-slider');
   slider.setAttribute('max', (canvas.width - iw)/2);
   slider.value = 40;
+  if ($.browser.firefox) {
+    fdSlider.updateSlider('#anaglyph-slider');
+  }
 
   draw_anaglyph();
 
@@ -223,7 +226,8 @@ var mode_select = function () {
   $mode = new_mode;
   mode_prep();
 
-  $.get('/stereo-cookie?mode=' + $mode);
+  document.cookie = 'stereo-mode=' + $mode + ';Expires=Sun, 17 Jan 2038'
+                    + ' 19:14:07 GMT; path=/';
 }
 
 //
@@ -241,11 +245,13 @@ $(window).resize(function () {
 });
 
 var one_loaded = false;
+var both_loaded = false;
 
 var on_image_load = function () {
-  if (one_loaded) {
+  if (one_loaded && !both_loaded) {
+    both_loaded = true;
     mode_select();
-  } else {
+  } else if (!one_loaded) {
     one_loaded = true;
   }
 }
