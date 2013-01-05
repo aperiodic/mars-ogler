@@ -12,10 +12,10 @@
    :wiggle "Wiggle"
    :anaglyph "Anaglyph (Red-Cyan)"})
 
-(def modes [:stereo-cross :stereo-wall :wiggle :anaglyph])
+(def modes [:anaglyph :stereo-cross :stereo-wall])
 
 (defn stereo
-  [{:keys [l_id r_id]}]
+  [{:keys [l_id r_id stereo-mode]}]
   (let [l-img (get-in @images/indices [:id (name l_id)])
         r-img (get-in @images/indices [:id (name r_id)])
         iw (:w l-img)
@@ -38,18 +38,19 @@
                          :nominal-width iw, :nominal-height ih}]]
         [:div#right.hidden
          [:img#right-img {:src r-path, :width iw, :height ih}]]
-        [:div#anaglyph.hidden
-         ]]
+        [:div#anaglyph.hidden]]
        [:div#ui
         [:span#mode-label "Viewing Mode: "]
+        [:input#preferred-mode {:type "hidden" :value stereo-mode}]
         [:select#mode-select {:disabled true}
          (for [mode modes]
            [:option {:value mode, :selected (= mode :mono)}
             (mode->name mode)])]
-        [:span#anaglyph-ui.hidden
+        [:span.anaglyph-ui.hidden
          [:span#anaglyph-slider-label "Alignment: "]
          [:input#anaglyph-slider {:type "range", :min 0, :max -1, :step 1}]]
         [:span#no-js "Sorry, the stereo pair viewer requires Javascript"]]
+       [:div.anaglyph-ui.hidden "Having trouble aligning? Try making your window wider and refreshing."]
        [:div#footer
         [:div#footer-left
          "A component of the " [:a {:href "/"} "Mars Ogler"] ", built by Dan "

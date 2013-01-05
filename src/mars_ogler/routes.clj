@@ -18,9 +18,8 @@
 (def expiration-date "Sun, 17 Jan 2038 19:14:07 GMT")
 
 (defn parse-cookie-params
-  [cookie-params]
-  (let [keys [:cams :per-page :sorting :stereo :thumbs :view]
-        kw->sk (zipmap keys (map name keys))]
+  [cookie-params keys]
+  (let [kw->sk (zipmap keys (map name keys))]
     (into {} (->> (for [[kw sk] kw->sk]
                     (if-let [v (get-in cookie-params [sk :value])]
                       (if (= kw :cams)
@@ -82,8 +81,13 @@
                    "Expires" expiration-date
                    "Last-Modified" (times/current-date)}
          :body (java.io.ByteArrayInputStream. img-bytes)})))
-  (GET "/stereo" [& params]
-    (stereo params))
+  (GET "/stereo" [& params :as {:keys [cookies]}]
+    (let [params (merge params (parse-cookie-params cookies [:stereo-mode]))]
+      (println params)
+      (stereo params)))
+  (GET "/stereo-cookie" [mode]
+       {:status 200
+        :cookies (set-expires {:stereo-mode mode})})
   (GET "/" [& params :as {:keys [query-string cookies]}]
     (let [[visit-last
            visit-start
@@ -91,7 +95,8 @@
                                      (get-in cookies ["visit-start" :value])
                                      (get-in cookies ["visit-recent" :value]))
           parsed-params (-> cookies
-                          parse-cookie-params
+                          (parse-cookie-params [:cams :per-page :sorting
+                                                :stereo :thumbs :view])
                           (merge params)
                           (assoc :query-string query-string
                                  :visit-last visit-last
