@@ -115,7 +115,9 @@
                          :visit-recent visit-recent
                          :cams (->> (:cams parsed-params)
                                  (map name)
-                                 (str/join " ")))
+                                 (str/join " "))
+                         :stereo (or (:stereo parsed-params)
+                                     :off))
                   set-expires)}))
   (route/resources "/")
   (route/not-found "You have wandered into a maze of twisty passages, all alike"))
