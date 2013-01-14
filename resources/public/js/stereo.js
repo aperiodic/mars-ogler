@@ -74,6 +74,88 @@ var wiggle_tick = function () {
 
 var pix_cached = false;
 var l_pix, r_pix;
+var r_off, g_off, b_off, a_off;
+
+var diff_channel = function (x_chans, y_chans) {
+  var x_hits = [0,0,0,0];
+  var y_hits = [0,0,0,0];
+  for (var i = 0; i < 4; i++) {
+    if (x_chans[i] >= 240) {
+      x_hits[i] = 1;
+    }
+    if (y_chans[i] >= 240) {
+      y_hits[i] = 1;
+    }
+  }
+
+  for (var i = 0; i < 4; i++) {
+    if (x_hits[i] === 1 && y_hits[i] === 0) {
+      return i;
+    }
+  }
+}
+
+var like_channel = function (x_chans, y_chans) {
+  var hits = [0,0,0,0];
+  for (var i = 0; i < 4; i++) {
+    if (x_chans[i] >= 240) {
+      hits[i] += 1;
+    }
+    if (y_chans[i] >= 240) {
+      hits[i] += 1;
+    }
+  }
+
+  for (var i = 0; i < 4; i++) {
+    if (hits[i] > 1) {
+      return i;
+    }
+  }
+}
+
+var anaglyph_setup = function () {
+  var r_img = new Image();
+  var g_img = new Image();
+  var b_img = new Image();
+  var loaded = 0;
+
+  var on_ref_load = function () {
+    loaded += 1;
+    if (loaded < 3) {
+      return;
+    }
+
+    var r_data, g_data, b_data;
+    var hidden_canvas = document.createElement('canvas');
+    hidden_canvas.width = 1;
+    hidden_canvas.height = 1;
+    var hg = hidden_canvas.getContext('2d');
+
+    hg.drawImage(r_img, 0, 0);
+    r_data = hg.getImageData(0, 0, 1, 1).data;
+    hg.drawImage(g_img, 0, 0);
+    g_data = hg.getImageData(0, 0, 1, 1).data;
+    hg.drawImage(b_img, 0, 0);
+    b_data = hg.getImageData(0, 0, 1, 1).data;
+
+    r_off = diff_channel(r_data, g_data);
+    g_off = diff_channel(g_data, b_data);
+    b_off = diff_channel(b_data, r_data);
+    a_off = like_channel(r_data, g_data);
+
+    if ($mode === 'anaglyph') {
+      draw_anaglyph();
+    }
+  };
+
+  r_img.onload = on_ref_load;
+  b_img.onload = on_ref_load;
+  g_img.onload = on_ref_load;
+
+  r_img.src = '/img/red.png';
+  g_img.src = '/img/green.png';
+  b_img.src = '/img/blue.png';
+};
 
 var anaglyph_position = function () {
   var cw = $('#anaglyph-canvas')[0].width;
@@ -83,7 +165,7 @@ var anaglyph_position = function () {
 
   var slider = document.getElementById('anaglyph-slider');
   slider.setAttribute('max', (cw - iw)/2);
-}
+};
 
 var draw_anaglyph = function () {
   var l_img = document.getElementById('left-img');
@@ -122,29 +204,19 @@ var draw_anaglyph = function () {
       var l_dest_index = c_pindex(x + l_x_off, y);
       var r_dest_index = c_pindex(x + r_x_off, y);
 
-      if ($.browser.webkit || $.browser.opera) {
-        // right image goes to red channel, left to blue & green
-        a_pix[r_dest_index + 0] = r_pix[src_index];
-        a_pix[l_dest_index + 1] = l_pix[src_index];
-        a_pix[l_dest_index + 2] = l_pix[src_index];
-        // make both destination pixels fully opaque
-        a_pix[r_dest_index + 3] = 255;
-        a_pix[l_dest_index + 3] = 255;
-      } else {
-        // right image goes to red channel, left to blue & green
-        a_pix[r_dest_index + 2] = r_pix[src_index];
-        a_pix[l_dest_index + 0] = l_pix[src_index];
-        a_pix[l_dest_index + 3] = l_pix[src_index];
-        // make both destination pixels fully opaque
-        a_pix[r_dest_index + 1] = 255;
-        a_pix[l_dest_index + 1] = 255;
-      }
+      // right image goes to red channel, left to blue & green
+      a_pix[r_dest_index + r_off] = r_pix[src_index];
+      a_pix[l_dest_index + g_off] = l_pix[src_index];
+      a_pix[l_dest_index + b_off] = l_pix[src_index];
+      // make both destination pixels fully opaque
+      a_pix[r_dest_index + a_off] = 255;
+      a_pix[l_dest_index + a_off] = 255;
     }
   }
 
   // draw the anaglyph
   g.putImageData(anaglyph_image_data, 0, 0);
-}
+};
 
 var anaglyph_prep = function () {
   $('#left').addClass('hidden');
@@ -171,7 +243,9 @@ var anaglyph_prep = function () {
     fdSlider.updateSlider('#anaglyph-slider');
   }
 
-  draw_anaglyph();
+  if (r_off) {
+    draw_anaglyph();
+  }
 
   $('#anaglyph').removeClass('hidden');
   $('.anaglyph-ui').removeClass('hidden');
@@ -265,6 +339,8 @@ $(document).ready(function () {
   $('#no-js').css('display', 'none');
   $('#mode-select').attr('disabled', false);
   $('option[value=' + $mode + ']').attr('selected', true);
+
+  anaglyph_setup();
 
   mode_prep();
   $('#mode-select').change(mode_select);
