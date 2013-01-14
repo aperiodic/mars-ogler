@@ -47,6 +47,13 @@
                    "RRA" "HazCam Rear-Right A"
                    "RRB" "HazCam Rear-Right B"})
 
+(def cam->max-size {:chemcam 1024
+                    :hazcam 1024
+                    :mastcam 1344
+                    :mahli 1584
+                    :mardi 1648
+                    :navcam 1024})
+
 (defn cam-parity
   [cam-name]
   (cond

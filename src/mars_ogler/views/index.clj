@@ -7,17 +7,21 @@
             [mars-ogler.times :as times])
   (:use [hiccup core page]))
 
+(def min-size->pred
+  {:thumb (constantly true)
+   :medium (fn [img] (not= (:size img) :thumbnail))
+   :full (fn [img]
+           (let [cam-max-size (cams/cam->max-size (:cam img))]
+             (or (>= (:w img) cam-max-size)
+                 (>= (:h img) cam-max-size))))})
+
 (defn filter-pics
-  [{:keys [cams sorting stereo thumbs]}]
+  [{:keys [cams min-size sorting stereo thumbs]}]
   (let [cam-pred (fn [img] (-> img :cam cams))
-        size-pred (case thumbs
-                    :no #(not= (:size %) :thumbnail)
-                    :yes (constantly true)
-                    :only #(= (:size %) :thumbnail))
         stereo-pred (case stereo
                       :yes (constantly true)
                       :only :stereo?)]
-    (filter (every-pred size-pred cam-pred stereo-pred)
+    (filter (every-pred cam-pred stereo-pred (min-size->pred min-size))
             (get @images/sorted-images sorting ()))))
 
 (defn pic->href
@@ -139,10 +143,10 @@
        [:a {:href (page-link (inc page))} [:div.page.limit "Next &gt;&gt;"]])]))
 
 (defn toolbar
-  [{:keys [cams page per-page sorting stereo thumbs view]}]
+  [{:keys [cams min-size page per-page sorting stereo thumbs view]}]
   (let [grid? (= view :grid)
         sorting-names {:released "Date Released", :taken-utc "Date Taken"
-                       :taken-marstime "Time of Martian Day Taken"}]
+                       :taken-marstime "Local Time Taken"}]
     [:div#toolbar-wrapper
      [:div#toolbar {:class (str "content "(if grid? "grid-content"))}
       [:form {:action "/"}
@@ -158,41 +162,39 @@
             (cams/cam->name cam)]])]
        [:div#sorting
         [:span.tool-label "Sort By:"]
-        (for [sort-type [:released :taken-utc :taken-marstime]]
-          [:span.option
-           [:label [:input {:type "radio"
-                            :name "sorting"
-                            :value sort-type
-                            :checked (= sort-type sorting)}]
-            (sorting-names sort-type)]])]
-       [:div#filters
-        [:span.tool-label "Show Thumbnail Photos?"]
-        (for [opt [:no :yes]]
-          [:span.option
-           [:label [:input {:type "radio", :name "thumbs", :value opt,
-                            :checked (= opt thumbs)}]
-            (-> opt name str/capitalize)]])
-        "| &nbsp;"
-        [:span.tool-label "Show Stereo Pairs?"]
-        (for [opt [:yes :only]]
-          [:span.option
-           [:label [:input {:type "radio", :name "stereo", :value opt
-                            :checked (= opt stereo)}]
-            (-> opt name str/capitalize)]])]
-       [:div#view
+        [:select {:name "sorting"}
+         (for [sort-type [:released :taken-utc :taken-marstime]]
+           [:option {:value sort-type
+                     :selected (= sort-type sorting)}
+            (sorting-names sort-type)])]
+        " &nbsp;"
         [:span.tool-label "Photos per Page:"]
         [:select {:name "per-page"}
          (for [amount (if grid? [25 50 100 200] [10 25 50 100])]
            [:option {:value amount, :selected (= amount per-page)} amount])]
-        " | &nbsp;"
+        " &nbsp;"
         [:span.tool-label "View as:"]
-        (for [view-type [:list :grid]]
-          [:span.option
-           [:label [:input {:type "radio"
-                     :name "view"
-                     :value view-type
-                     :checked (= view-type view)}]
-            (-> view-type name str/capitalize)]])]]]]))
+        [:select {:name "view"}
+         (for [view-type [:list :grid]]
+          [:option {:value view-type, :selected (= view-type view)}
+            (-> view-type name str/capitalize)])]]
+       [:div#filters
+        [:span.tool-label "Minimum Size:"]
+        (let [size->name {:thumb "Thumbnail"
+                          :medium "Medium"
+                          :full "Full-Size"}]
+          (for [size [:thumb :medium :full]]
+            [:span.option
+             [:label [:input {:type "radio"
+                              :name "min-size"
+                              :value size
+                              :checked (= min-size size)}]
+              (size->name size)]]))
+        " | &nbsp;"
+        [:label [:input {:name "stereo" :type "checkbox"
+                         :checked (= :only stereo)}]
+         "Only Show Stereo Pairs"]]
+       ]]]))
 
 (defn index
   [{:keys [view] :as params}]
