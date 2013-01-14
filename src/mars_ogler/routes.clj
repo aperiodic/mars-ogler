@@ -34,7 +34,7 @@
          page "1"
          per-page "25"
          sorting "released"
-         stereo "yes"
+         stereo "off"
          thumbs "no"
          view "list"}
     :as params}]
@@ -86,10 +86,6 @@
   (GET "/stereo" [& params :as {:keys [cookies]}]
     (let [params (merge params (parse-cookie-params cookies [:stereo-mode]))]
       (stereo params)))
-  (GET "/stereo-cookie" [mode]
-       {:status 200
-        :cookies (set-expires {:stereo-mode mode})
-        :body "<html></html>"})
   (GET "/" [& params :as {:keys [query-string cookies]}]
        (let [visit-times (visit-tick (get-in cookies ["visit-last" :value])
                                      (get-in cookies ["visit-start" :value])
