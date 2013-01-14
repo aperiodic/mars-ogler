@@ -64,6 +64,11 @@ a:visited {
   top: 3px;
 }
 
+#anaglyph-instructions {
+  width: 532px;
+  margin: auto;
+  text-align: left;
+}
 #fd-slider-anaglyph-slider {
   width: 250px;
   display: inline-block;
@@ -82,3 +87,4 @@ a:visited {
   border-top: 1px solid #f3e3c1;
   text-align: center;
 }
+

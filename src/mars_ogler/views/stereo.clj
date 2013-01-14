@@ -51,7 +51,15 @@
          [:input#anaglyph-slider {:type "range",
                                   :min 0, :max -1, :step 1}]]
         [:span#no-js "Sorry, the stereo pair viewer requires Javascript"]]
-       [:div.anaglyph-ui.hidden "Having trouble aligning? Try making your window wider and refreshing."]
+       [:div#anaglyph-instructions.anaglyph-ui.hidden
+        [:h3 "A Helpful Note:"]
+        [:p "The alignment defaults to a value that usually works well for
+            panoramic shots, but might not be great for this pair.
+            If you're having trouble seeing the 3D, try moving the alignment
+            slider with your glasses off until you see a particular feature
+            (such as a rock) line up between the red and cyan images.
+            If you need more room to align the images, make your browser window
+            wider and refresh."]]
        [:div#footer
         [:div#footer-left
          "A component of the " [:a {:href "/"} "Mars Ogler"] ", built by Dan "
