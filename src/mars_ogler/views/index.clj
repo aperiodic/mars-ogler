@@ -18,9 +18,9 @@
 (defn filter-pics
   [{:keys [cams min-size sorting stereo thumbs]}]
   (let [cam-pred (fn [img] (-> img :cam cams))
-        stereo-pred (case stereo
-                      :yes (constantly true)
-                      :only :stereo?)]
+        stereo-pred (if (= stereo :on)
+                      :stereo?
+                      (constantly true))]
     (filter (every-pred cam-pred stereo-pred (min-size->pred min-size))
             (get @images/sorted-images sorting ()))))
 
