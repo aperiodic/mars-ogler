@@ -113,6 +113,19 @@ var like_channel = function (x_chans, y_chans) {
   }
 }
 
+var update_alignment_slider = function () {
+  var canvas = document.getElementById('anaglyph-canvas');
+  if (!canvas) return;
+
+  var iw = $('#left-img').attr('nominal-width') * 1;
+  var slider = document.getElementById('anaglyph-slider');
+  slider.setAttribute('max', (canvas.width - iw)/2);
+  slider.value = 40;
+  if (window.fdSlider) {
+    fdSlider.updateSlider('fd-slider-anaglyph-slider');
+  }
+}
+
 var anaglyph_setup = function () {
   var r_img = new Image();
   var g_img = new Image();
@@ -143,7 +156,9 @@ var anaglyph_setup = function () {
     b_off = diff_channel(b_data, r_data);
     a_off = like_channel(r_data, g_data);
 
-    if ($mode === 'anaglyph') {
+    var canvas = document.getElementById('anaglyph-canvas');
+    if ($mode === 'anaglyph' && canvas) {
+      update_alignment_slider();
       draw_anaglyph();
     }
   };
@@ -168,6 +183,10 @@ var anaglyph_position = function () {
 };
 
 var draw_anaglyph = function () {
+  if (r_off === undefined) {
+    return;
+  }
+
   var l_img = document.getElementById('left-img');
   var r_img = document.getElementById('right-img');
   var iw = l_img.getAttribute('nominal-width') * 1;
@@ -234,18 +253,10 @@ var anaglyph_prep = function () {
   }
 
   var ih = $('#left-img').attr('nominal-height') * 1;
-  var iw = $('#left-img').attr('nominal-width') * 1;
   $('#container').css('height', ih + gutter/2);
-  var slider = document.getElementById('anaglyph-slider');
-  slider.setAttribute('max', (canvas.width - iw)/2);
-  slider.value = 40;
-  if ($.browser.firefox) {
-    fdSlider.updateSlider('#anaglyph-slider');
-  }
 
-  if (r_off) {
-    draw_anaglyph();
-  }
+  update_alignment_slider();
+  draw_anaglyph();
 
   $('#anaglyph').removeClass('hidden');
   $('.anaglyph-ui').removeClass('hidden');

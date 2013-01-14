@@ -49,12 +49,12 @@
         [:span.anaglyph-ui.hidden
          [:span#anaglyph-slider-label "Alignment: "]
          [:input#anaglyph-slider {:type "range",
-                                  :min 0, :max -1, :step 1}]]
+                                  :min 0, :max 150, :step 1, :value 40}]]
         [:span#no-js "Sorry, the stereo pair viewer requires Javascript"]]
        [:div#anaglyph-instructions.anaglyph-ui.hidden
         [:h3 "A Helpful Note:"]
         [:p "The alignment defaults to a value that usually works well for
-            panoramic shots, but might not be great for this pair.
+            panoramic shots, but doesn't work for every pair.
             If you're having trouble seeing the 3D, try moving the alignment
             slider with your glasses off until you see a particular feature
             (such as a rock) line up between the red and cyan images.
