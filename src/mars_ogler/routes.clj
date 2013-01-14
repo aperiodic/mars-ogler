@@ -84,7 +84,8 @@
                    "Last-Modified" (times/current-date)}
          :body (java.io.ByteArrayInputStream. img-bytes)})))
   (GET "/stereo" [& params :as {:keys [cookies]}]
-    (let [params (merge params (parse-cookie-params cookies [:stereo-mode]))]
+    (let [params (merge params (parse-cookie-params cookies [:stereo-mode]))
+          params (assoc params :stereo-mode (or (:stereo-mode params) :anaglyph))]
       (stereo params)))
   (GET "/" [& params :as {:keys [query-string cookies]}]
        (let [visit-times (visit-tick (get-in cookies ["visit-last" :value])
