@@ -15,6 +15,6 @@
   :plugins [[lein-ring "0.7.1"]]
   :main mars-ogler.main
   :uberjar-name "mars-ogler.jar"
-  :jvm-opts ["-Xmx384m"]
+  :jvm-opts ["-Xmx320m"]
   :ring {:handler mars-ogler.routes/ogler-handler
          :init mars-ogler.images/setup!})
