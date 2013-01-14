@@ -192,7 +192,7 @@
               (size->name size)]]))
         " | &nbsp;"
         [:label [:input {:name "stereo" :type "checkbox"
-                         :checked (= :only stereo)}]
+                         :checked (= :on stereo)}]
          "Only Show Stereo Pairs"]]
        ]]]))
 
