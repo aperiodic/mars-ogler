@@ -80,7 +80,7 @@
 (defn fetch-page
   [i]
   (let [page (:body (http/post
-                      "http://curiositymsl.com/localphp/loadmore.php"
+                      "http://curiosityrover.com/localphp/loadmore.php"
                       {:headers {"Cookie" "PHPSESSID=3v55ibi7c0l25836c2chenpmo1"
                                  "User-Agent" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13 (KHTML, like Gecko) Chrome/24.0.1290.1 Safari/537.13"
                                  "X-Requested-With" "XMLHttpRequest"}
