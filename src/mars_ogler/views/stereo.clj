@@ -4,7 +4,8 @@
             [mars-ogler.cams :as cams]
             [mars-ogler.images :as images]
             [mars-ogler.times :as times])
-  (:use [hiccup core page]))
+  (:use [hiccup core page]
+        [mars-ogler.image-utils :only [image->url]]))
 
 (def mode->name
   {:stereo-cross "Stereo (Cross-Eyed)"
@@ -21,7 +22,7 @@
         iw (:w l-img)
         ih (:h l-img)
         [l-path r-path] (for [img [l-img r-img]]
-                          (-> img :url java.net.URL. .getPath))]
+                          (-> img image->url java.net.URL. .getPath))]
     (html5
       [:head
        [:title "Stereo Pair Viewer | The Mars Ogler"]
