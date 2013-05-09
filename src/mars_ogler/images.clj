@@ -99,8 +99,7 @@
 
 (defn thumbnail?
   [img]
-  (let [t (:type img)]
-    (or (= t "I") (= t "T") (= t "Q") false)))
+  (= (:type img) "Thumbnail"))
 
 ;;
 ;; Stereo Pairs
