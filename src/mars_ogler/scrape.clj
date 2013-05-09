@@ -5,7 +5,8 @@
             [mars-ogler.cams :as cams]
             [mars-ogler.images :as images]
             [mars-ogler.times :as times]
-            [net.cgrand.enlive-html :as html]))
+            [net.cgrand.enlive-html :as html])
+  (:use [mars-ogler.image-utils :only [truncate-url]]))
   (def % partial)
 
 ;;
@@ -40,8 +41,9 @@
         sol (->> (html/text rawtable) (re-find #"sol (\d+)") second Integer.)
         [marstime taken-utc released acquired] (div->times div)
         thumbnail-url (-> (html/select div [:.thumbnail :a :img])
-                        first :attrs :src)
-        url (-> (html/select div [:.rawtable :a]) first :attrs :href)
+                        first :attrs :src truncate-url)
+        url (-> (html/select div [:.rawtable :a])
+              first :attrs :href truncate-url)
         dims (->> (re-find #"(\d+)x(\d+)" (html/text div)) (drop 1))
         [w h] (for [dim dims] (Integer/parseInt dim))]
     {:w w, :h h, :id id, :type type, :sol sol

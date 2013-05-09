@@ -5,20 +5,22 @@
             [mars-ogler.cams :as cams]
             [mars-ogler.images :as images]
             [mars-ogler.times :as times])
-  (:use [hiccup core page]))
+  (:use [hiccup core page]
+        [mars-ogler.image-utils :only [image->camera image->url
+                                       image->thumbnail-url thumbnail?]]))
 
 (def min-size->pred
   {:thumb (constantly true)
-   :medium (fn [img] (not (images/thumbnail? img)))
+   :medium (fn [img] (not (thumbnail? img)))
    :full (fn [img]
            (let [cam-max-size (-> img
-                                images/image->camera, :cam, cams/cam->max-size)]
+                                image->camera, :cam, cams/cam->max-size)]
              (or (>= (:w img) cam-max-size)
                  (>= (:h img) cam-max-size))))})
 
 (defn filter-pics
   [{:keys [cams min-size sorting stereo thumbs]}]
-  (let [cam-pred (fn [img] (cams (-> img images/image->camera :cam)))
+  (let [cam-pred (fn [img] (cams (-> img image->camera :cam)))
         stereo-pred (if (= stereo :on)
                       :stereo?
                       (constantly true))]
@@ -26,24 +28,24 @@
             (get @images/sorted-images sorting ()))))
 
 (defn pic->href
-  [{:keys [id stereo? url]}]
+  [{:keys [id stereo?] :as pic}]
   (if-not stereo?
-    url
+    (image->url pic)
     (let [partner-id (get-in @images/indices [:stereo id])
           [l-id r-id] (sort [id partner-id])]
       (str "/stereo?l_id=" l-id "&r_id=" r-id))))
 
 (defn pic->list-hiccup
-  [{:keys [acquired-stamp id lag released size sol stereo?
-           taken-marstime taken-utc thumbnail-url type url w h]
+  [{:keys [acquired-stamp id lag released size sol stereo? taken-marstime
+           taken-utc type w h]
     :as pic}
    visit-last]
   (let [new? (> acquired-stamp visit-last)
-        cam-name (-> pic images/image->camera :cam-name)]
+        cam-name (-> pic image->camera :cam-name)]
     [:div.list-pic-wrapper
      [:div.pic.list-pic
       [:a {:href (pic->href pic)}
-       [:img {:src thumbnail-url
+       [:img {:src (image->thumbnail-url pic)
               :class (if new? "new pic-img" "pic-img")}]]]
      [:div.pic-info
       [:div.title-line
@@ -55,10 +57,10 @@
       w [:span.x " x "] h " " type " | ID: " [:a {:href (pic->href pic)} id]]]))
 
 (defn pic->grid-hiccup
-  [{:keys [acquired-stamp id sol taken-marstime thumbnail-url url] :as pic}
+  [{:keys [acquired-stamp id sol taken-marstime] :as pic}
    visit-last]
   (let [new? (> acquired-stamp visit-last)
-        cam-name (-> pic images/image->camera :cam-name)
+        cam-name (-> pic image->camera :cam-name)
         clean-lmst (str (first (re-find #"^((\d){1,2}:\d\d)" taken-marstime))
                         " "
                         (first (re-find #"(PM|AM)" taken-marstime)))
@@ -67,7 +69,7 @@
      [:div.pic.grid-pic
       [:a {:href (pic->href pic), :title label}
        [:img {:class (if new? "new pic-img" "pic-img")
-              :src thumbnail-url
+              :src (image->thumbnail-url pic)
               :alt (str cam-name " at " label)}]]]]))
 
 (defn page-pics

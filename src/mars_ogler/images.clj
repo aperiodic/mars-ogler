@@ -2,7 +2,8 @@
   (:require [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [mars-ogler.cams :as cams]
-            [mars-ogler.times :as times]))
+            [mars-ogler.times :as times])
+  (:use [mars-ogler.image-utils :only [image->camera truncate-urls]]))
 
 ;;
 ;; Public API
@@ -80,35 +81,13 @@
 (def format-image (comp format-dates format-type))
 
 ;;
-;; Camera Information
-;;
-
-(defn id->camera
-  [id]
-  (let [abbrev (re-find #"[A-Z]+" id)]
-    {:cam (cams/abbrev->cam abbrev)
-     :cam-name (cams/abbrev->name abbrev)}))
-
-(defn image->camera
-  [img]
-  (-> img :id id->camera))
-
-;;
-;; Size
-;;
-
-(defn thumbnail?
-  [img]
-  (= (:type img) "Thumbnail"))
-
-;;
 ;; Stereo Pairs
 ;;
 
 (defn stereo-pair?
   [[a b]]
-  (let [{a-cam :cam, a-cam-name :cam-name} (id->camera (:id a))
-        {b-cam :cam, b-cam-name :cam-name} (id->camera (:id b))]
+  (let [{a-cam :cam, a-cam-name :cam-name} (image->camera a)
+        {b-cam :cam, b-cam-name :cam-name} (image->camera b)]
     (and (= (:taken-utc a) (:taken-utc b)) ; taken at the same time
        (= a-cam b-cam) ; from the same group of cameras
        (= (:w a) (:w b)) (= (:h a) (:h b)) ; they're the same size
@@ -198,13 +177,17 @@
 
 (defn setup!
   []
-  (let [processed (-> (get-cached-images) process-images)]
-    (reset! indices (index-images processed))
-    (reset! sorted-images (sort-images processed))))
+  (let [processed (-> (get-cached-images) process-images)
+        indices' (index-images processed)
+        sorted-images' (sort-images processed)]
+    (reset! indices indices')
+    (reset! sorted-images sorted-images')))
 
 (defn update!
   [imgs]
   (cache-images! imgs)
-  (let [processed (-> imgs process-images)]
-    (reset! indices (index-images processed))
-    (reset! sorted-images (sort-images processed))))
+  (let [processed (-> imgs process-images)
+        indices' (index-images processed)
+        sorted-images' (sort-images processed)]
+    (reset! indices indices')
+    (reset! sorted-images sorted-images')))
