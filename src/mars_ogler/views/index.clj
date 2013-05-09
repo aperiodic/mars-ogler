@@ -6,8 +6,9 @@
             [mars-ogler.images :as images]
             [mars-ogler.times :as times])
   (:use [hiccup core page]
-        [mars-ogler.image-utils :only [image->camera image->url
-                                       image->thumbnail-url thumbnail?]]))
+        [mars-ogler.image-utils :only [format-image image->camera image->lag
+                                       image->url image->thumbnail-url
+                                       thumbnail?]]))
 
 (def min-size->pred
   {:thumb (constantly true)
@@ -202,7 +203,7 @@
 
 (defn index
   [{:keys [view] :as params}]
-  (let [filtered-pics (filter-pics params)
+  (let [filtered-pics (->> (filter-pics params) (map format-image))
         last-visit (:visit-last params)
         new-count (-> (take-while
                         #(> (:acquired-stamp %) last-visit)

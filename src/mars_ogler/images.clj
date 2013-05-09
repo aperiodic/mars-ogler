@@ -39,46 +39,14 @@
                          (cvt-time/to-long acquired)
                          0)]
     (-> (merge img dates)
-      (assoc :lag lag, :acquired-stamp acquired-stamp))))
+      (assoc :acquired-stamp acquired-stamp))))
 
 (defn unparse-dates
   [img]
   (let [dates (select-keys img times/types)]
     (-> (into img (for [[type date] dates]
                     [type (times/rfc-printer date)]))
-      (dissoc :lag :acquired-stamp))))
-
-;;
-;; Formatting
-;;
-
-(defn format-dates
-  [img]
-  (let [full-dates (select-keys img (disj times/types :taken-marstime))]
-    (merge
-      img
-      {:taken-marstime (-> img :taken-marstime times/marstime-printer)}
-      (into {} (for [[type date] full-dates]
-                 [type (times/utc-printer date)])))))
-
-(defn format-type
-  [img]
-  (let [type-code (:type img)
-        formatted-type (condp = type-code
-                         "B" "Subsampled Image"
-                         "C" "Subsampled Image"
-                         "D" "Subsampled Image"
-                         "E" "Full Image"
-                         "F" "Full Image"
-                         "I" "Thumbnail"
-                         "Q" "Thumbnail"
-                         "S" "Depth Map"
-                         "T" "Thumbnail"
-                         "U" "Depth Map"
-                         (str "Type " type-code " Image"))]
-    (assoc img :type formatted-type)))
-
-(def format-image (comp format-dates format-type))
+      (dissoc :acquired-stamp))))
 
 ;;
 ;; Stereo Pairs
@@ -143,12 +111,11 @@
                [time-type (->> imgs
                             (sort-by time-type)
                             resort
-                            (map format-image)
                             doall)]))))
 
 (defn index-images
   [imgs]
-  {:id (zipmap (map :id imgs) (map format-image imgs))
+  {:id (zipmap (map :id imgs) imgs)
    :stereo (stereo-partner-index imgs)})
 
 ;;

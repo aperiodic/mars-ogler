@@ -1,6 +1,8 @@
 (ns mars-ogler.image-utils
-  (:require [clojure.string :as str]
-            [mars-ogler.cams :as cams]))
+  (:require [clj-time.core :as time]
+            [clojure.string :as str]
+            [mars-ogler.cams :as cams]
+            [mars-ogler.times :as times]))
 
 ;;
 ;; Camera Information
@@ -50,3 +52,41 @@
   (-> img
     (update-in [:url] truncate-url)
     (update-in [:thumbnail-url] truncate-url)))
+
+;;
+;; Formatting
+;;
+
+(defn image->lag
+  [img]
+  (let [{taken :taken-utc, released :released} img]
+    (times/format-interval (if (time/before? taken released)
+                             (time/interval taken released)
+                             (time/interval taken taken)))))
+(defn format-dates
+  [img]
+  (let [full-dates (select-keys img (disj times/types :taken-marstime))
+        marstime (-> img :taken-marstime times/marstime-printer)]
+    (-> img
+      (assoc :lag (image->lag img), :taken-marstime marstime)
+      (merge (into {} (for [[type date] full-dates]
+                        [type (times/utc-printer date)]))))))
+
+(defn format-type
+  [img]
+  (let [type-code (:type img)
+        formatted-type (condp = type-code
+                         "B" "Subsampled Image"
+                         "C" "Subsampled Image"
+                         "D" "Subsampled Image"
+                         "E" "Full Image"
+                         "F" "Full Image"
+                         "I" "Thumbnail"
+                         "Q" "Thumbnail"
+                         "S" "Depth Map"
+                         "T" "Thumbnail"
+                         "U" "Depth Map"
+                         (str "Type " type-code " Image"))]
+    (assoc img :type formatted-type)))
+
+(def format-image (comp format-dates format-type))
