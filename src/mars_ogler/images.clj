@@ -80,17 +80,33 @@
 (def format-image (comp format-dates format-type))
 
 ;;
+;; Camera Information
+;;
+
+(defn id->camera
+  [id]
+  (let [abbrev (re-find #"[A-Z]+" id)]
+    {:cam (cams/abbrev->cam abbrev)
+     :cam-name (cams/abbrev->name abbrev)}))
+
+(defn image->camera
+  [img]
+  (-> img :id id->camera))
+
+;;
 ;; Stereo Pairs
 ;;
 
 (defn stereo-pair?
   [[a b]]
-  (and (= (:taken-utc a) (:taken-utc b)) ; taken at the same time
-       (= (:cam a) (:cam b)) ; from the same group of cameras
+  (let [{a-cam :cam, a-cam-name :cam-name} (id->camera (:id a))
+        {b-cam :cam, b-cam-name :cam-name} (id->camera (:id b))]
+    (and (= (:taken-utc a) (:taken-utc b)) ; taken at the same time
+       (= a-cam b-cam) ; from the same group of cameras
        (= (:w a) (:w b)) (= (:h a) (:h b)) ; they're the same size
-       (let [parities (map (comp cams/cam-parity :cam-name) [a b])]
-         (and (every? identity parities)   ; one is a left camera, the other is
-              (not (apply = parities)))))) ; a right camera
+       (let [parities (map cams/cam-parity [a-cam-name b-cam-name])]
+         (and (every? identity parities)    ; one is a left camera, the other is
+              (not (apply = parities))))))) ; a right camera
 
 (defn mark-stereo-images
   [imgs]
@@ -168,6 +184,7 @@
   [imgs]
   (->> imgs
     (map unparse-dates)
+    (map #(dissoc % :cam :cam-name))
     prn-str
     (spit $images-file)))
 

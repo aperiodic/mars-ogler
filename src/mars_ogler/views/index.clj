@@ -11,13 +11,14 @@
   {:thumb (constantly true)
    :medium (fn [img] (not= (:size img) :thumbnail))
    :full (fn [img]
-           (let [cam-max-size (cams/cam->max-size (:cam img))]
+           (let [cam-max-size (-> img
+                                images/image->camera, :cam, cams/cam->max-size)]
              (or (>= (:w img) cam-max-size)
                  (>= (:h img) cam-max-size))))})
 
 (defn filter-pics
   [{:keys [cams min-size sorting stereo thumbs]}]
-  (let [cam-pred (fn [img] (-> img :cam cams))
+  (let [cam-pred (fn [img] (cams (-> img images/image->camera :cam)))
         stereo-pred (if (= stereo :on)
                       :stereo?
                       (constantly true))]
@@ -33,11 +34,12 @@
       (str "/stereo?l_id=" l-id "&r_id=" r-id))))
 
 (defn pic->list-hiccup
-  [{:keys [acquired-stamp cam cam-name id lag released size sol stereo?
+  [{:keys [acquired-stamp id lag released size sol stereo?
            taken-marstime taken-utc thumbnail-url type url w h]
     :as pic}
    visit-last]
-  (let [new? (> acquired-stamp visit-last)]
+  (let [new? (> acquired-stamp visit-last)
+        cam-name (-> pic images/image->camera :cam-name)]
     [:div.list-pic-wrapper
      [:div.pic.list-pic
       [:a {:href (pic->href pic)}
@@ -53,10 +55,10 @@
       w [:span.x " x "] h " " type " | ID: " [:a {:href (pic->href pic)} id]]]))
 
 (defn pic->grid-hiccup
-  [{:keys [acquired-stamp cam-name id sol taken-marstime thumbnail-url url]
-    :as pic}
+  [{:keys [acquired-stamp id sol taken-marstime thumbnail-url url] :as pic}
    visit-last]
   (let [new? (> acquired-stamp visit-last)
+        cam-name (-> pic images/image->camera :cam-name)
         clean-lmst (str (first (re-find #"^((\d){1,2}:\d\d)" taken-marstime))
                         " "
                         (first (re-find #"(PM|AM)" taken-marstime)))
