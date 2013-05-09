@@ -145,16 +145,16 @@
 (defn setup!
   []
   (let [processed (-> (get-cached-images) process-images)
-        indices' (index-images processed)
-        sorted-images' (sort-images processed)]
-    (reset! indices indices')
-    (reset! sorted-images sorted-images')))
+        indices' (future (index-images processed))
+        sorted-images' (future (sort-images processed))]
+    (reset! indices @indices')
+    (reset! sorted-images @sorted-images')))
 
 (defn update!
   [imgs]
   (cache-images! imgs)
   (let [processed (-> imgs process-images)
-        indices' (index-images processed)
-        sorted-images' (sort-images processed)]
-    (reset! indices indices')
-    (reset! sorted-images sorted-images')))
+        indices' (future (index-images processed))
+        sorted-images' (future (sort-images processed))]
+    (reset! indices @indices')
+    (reset! sorted-images @sorted-images')))
