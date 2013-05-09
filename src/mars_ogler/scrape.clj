@@ -48,22 +48,11 @@
      :taken-marstime marstime :taken-utc taken-utc, :released released
      :acquired acquired, :thumbnail-url thumbnail-url, :url url}))
 
-(defn classify-size
-  [{:keys [w h type] :as image}]
-  (let [long-dim (max w h)
-        size (cond
-               (or (= type "I") (= type "T") (= type "Q")) :thumbnail
-               (>= long-dim 1024) :large
-               (>= long-dim 512) :medium
-               :otherwise :small)]
-    (assoc image :size size)))
-
 (defn body->images
   [body-node]
   (let [image-divs (html/select body-node [:body :> :div])]
     (->> image-divs
       (map div->map)
-      (map classify-size)
       (map images/parse-dates))))
 
 ;;

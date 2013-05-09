@@ -94,6 +94,15 @@
   (-> img :id id->camera))
 
 ;;
+;; Size
+;;
+
+(defn thumbnail?
+  [img]
+  (let [t (:type img)]
+    (or (= t "I") (= t "T") (= t "Q") false)))
+
+;;
 ;; Stereo Pairs
 ;;
 
@@ -184,7 +193,7 @@
   [imgs]
   (->> imgs
     (map unparse-dates)
-    (map #(dissoc % :cam :cam-name))
+    (map #(dissoc % :cam :cam-name :size))
     prn-str
     (spit $images-file)))
 
