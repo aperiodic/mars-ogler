@@ -24,7 +24,8 @@
 
 (defn thumbnail?
   [img]
-  (= (:type img) "Thumbnail"))
+  (let [t (:type img)]
+    (or (= t "I") (= t "Q") (= t "T") false)))
 
 ;;
 ;; URLs

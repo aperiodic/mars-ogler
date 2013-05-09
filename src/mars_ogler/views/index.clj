@@ -78,6 +78,7 @@
   (->> pics
     (drop (* (dec page) per-page))
     (take per-page)
+    (map format-image)
     (map (if (= view :grid)
            #(pic->grid-hiccup % visit-last)
            #(pic->list-hiccup % visit-last)))))
@@ -203,12 +204,11 @@
 
 (defn index
   [{:keys [view] :as params}]
-  (let [filtered-pics (->> (filter-pics params) (map format-image))
+  (let [filtered-pics (filter-pics params)
         last-visit (:visit-last params)
-        new-count (-> (take-while
-                        #(> (:acquired-stamp %) last-visit)
-                        (filter-pics (assoc params :sorting :released)))
-                    count)
+        new-count (count (take-while
+                           #(> (:acquired-stamp %) last-visit)
+                           (filter-pics (assoc params :sorting :released))))
         pages (page-links filtered-pics params)
         grid? (= view :grid)]
     (html5
