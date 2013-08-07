@@ -28,8 +28,10 @@
                (keep identity)))))
 
 (defn parse-params
-  [{:keys [cams min-size page per-page sorting stereo thumbs query-string view]
+  [{:keys [cams format min-size page per-page sorting stereo thumbs query-string
+           view]
     :or {cams ["mahli" "mastcam" "navcam"]
+         format "html"
          min-size "medium"
          page "1"
          per-page "25"
@@ -41,6 +43,7 @@
   (let [cams' (if (vector? cams)
                 (set (map keyword cams))
                 #{(keyword cams)})
+        format' (keyword format)
         min-size' (keyword min-size)
         page' (Integer/parseInt page)
         sorting' (keyword sorting)
@@ -50,16 +53,17 @@
         per-page' (min (Integer/parseInt per-page)
                        (if (= view' :grid) 200 100))]
     (merge params
-           {:cams cams', :min-size min-size', :page page', :per-page per-page',
-            :sorting sorting' :stereo stereo', :thumbs thumbs',
-            :query-string (or query-string ""), :view view'})))
+           {:cams cams', :format format', :min-size min-size', :page page'
+            :per-page per-page', :sorting sorting', :stereo stereo'
+            :thumbs thumbs', :query-string (or query-string ""), :view view'})))
 
 (defn visit-tick
   [visit-last visit-start visit-recent]
   (let [now (cvt-time/to-long (time/now))
-        visit-last (if (nil? visit-last) now (Long/parseLong visit-last))
-        visit-start (if (nil? visit-start) now (Long/parseLong visit-start))
-        visit-recent (if (nil? visit-recent) now (Long/parseLong visit-recent))]
+        parsed-or-now (fn [t] (if (nil? t) now (Long/parseLong t)))
+        visit-last (parsed-or-now visit-last)
+        visit-start (parsed-or-now visit-start)
+        visit-recent (parsed-or-now visit-recent)]
     (if (> (- now visit-recent) (* 10 60 1000))
       ;; curiositymsl.com updates every 15 minutes, and we scrape every minute
       [(- visit-recent (* 16 60 1000)) now now]
@@ -71,6 +75,7 @@
              [c {:value v, :expires expiration-date}])))
 
 (defroutes ogler-routes
+
   (GET "/msl-raw-images/*" [* :as {{:strs [if-modified-since]} :headers}]
     (if if-modified-since ; note that we assume the images never change
       {:status 304
@@ -83,14 +88,16 @@
                    "Expires" expiration-date
                    "Last-Modified" (times/current-date)}
          :body (java.io.ByteArrayInputStream. img-bytes)})))
+
   (GET "/stereo" [& params :as {:keys [cookies]}]
     (let [params (merge params (parse-cookie-params cookies [:stereo-mode]))
           params (assoc params :stereo-mode (or (:stereo-mode params) :anaglyph))]
       (stereo params)))
+
   (GET "/" [& params :as {:keys [query-string cookies]}]
-       (let [visit-times (visit-tick (get-in cookies ["visit-last" :value])
-                                     (get-in cookies ["visit-start" :value])
-                                     (get-in cookies ["visit-recent" :value]))
+    (let [visit-times (visit-tick (get-in cookies ["visit-last" :value])
+                                  (get-in cookies ["visit-start" :value])
+                                  (get-in cookies ["visit-recent" :value]))
           [visit-last visit-start visit-recent] visit-times
           parsed-params (-> cookies
                           (parse-cookie-params [:cams :min-size :per-page
@@ -102,7 +109,9 @@
                                  :visit-recent visit-recent)
                           parse-params)]
       {:status 200
-       :headers {"Content-Type" "text/html; charset=utf-8"}
+       :headers {"Content-Type" (if (= (:format parsed-params) :json)
+                                  "application/json; charset=utf-8"
+                                  "text/html; charset=utf-8")}
        :body (index parsed-params)
        :cookies (-> (select-keys params
                                  [:per-page :min-size :sorting :stereo :thumbs

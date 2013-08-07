@@ -5,6 +5,7 @@
             :url "http://www.gnu.org/licenses/agpl"}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/tools.cli "0.2.2"]
+                 [cheshire "5.2.0"]
                  [clj-http "0.6.3"]
                  [clj-time "0.4.4"]
                  [compojure "1.1.3"]
@@ -15,6 +16,6 @@
   :plugins [[lein-ring "0.7.1"]]
   :main mars-ogler.main
   :uberjar-name "mars-ogler.jar"
-  :jvm-opts ["-Xmx320m"]
+  :jvm-opts ["-Xmx576m"]
   :ring {:handler mars-ogler.routes/ogler-handler
          :init mars-ogler.images/setup!})
