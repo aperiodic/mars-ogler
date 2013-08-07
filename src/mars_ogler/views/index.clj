@@ -4,7 +4,9 @@
             [clojure.string :as str]
             [mars-ogler.cams :as cams]
             [mars-ogler.images :as images]
-            [mars-ogler.times :as times])
+            [mars-ogler.image-utils :as img]
+            [mars-ogler.times :as times]
+            [mars-ogler.util :refer [generate-json]])
   (:use [hiccup core page]
         [mars-ogler.image-utils :only [format-image image->camera image->lag
                                        image->url image->thumbnail-url
@@ -73,15 +75,12 @@
               :src (image->thumbnail-url pic)
               :alt (str cam-name " at " label)}]]]]))
 
+
 (defn page-pics
-  [pics {:keys [page per-page view visit-last]}]
+  [pics {:keys [page per-page]}]
   (->> pics
     (drop (* (dec page) per-page))
-    (take per-page)
-    (map format-image)
-    (map (if (= view :grid)
-           #(pic->grid-hiccup % visit-last)
-           #(pic->list-hiccup % visit-last)))))
+    (take per-page)))
 
 (defn page-link
   [page rest-qstring]
@@ -203,54 +202,74 @@
        ]]]))
 
 (defn index
-  [{:keys [view] :as params}]
-  (let [filtered-pics (filter-pics params)
-        last-visit (:visit-last params)
-        new-count (count (take-while
-                           #(> (:acquired-stamp %) last-visit)
-                           (filter-pics (assoc params :sorting :released))))
-        pages (page-links filtered-pics params)
-        grid? (= view :grid)]
-    (html5
-      [:head
-       [:title "The Mars Ogler"]
-       [:link {:rel "shortcut icon" :href "/favicon.ico"}]
-       (include-css "/css/main.css")
-       (include-css "http://fonts.googleapis.com/css?family=Oswald:700")
-       (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400")]
-      [:body
-       [:div#top-content {:class (str "content " (if grid? "grid-content"))}
-        [:h1#title "The Mars Ogler"]
-        [:div#blurb
-         "A Curiosity Mars Science Laboratory raw images viewer"
-         [:br]
-         "Built on top of "
-         [:a {:href "http://curiositymsl.com/"} "Curiosity MSL Viewer"]
-         " and "
-         [:a {:href "http://mars.jpl.nasa.gov/"} "NASA Mars Exploration"]
-         [:br]
-         "How about a "
-         [:a {:href "http://www.penny4nasa.org/the-mission/"} "Penny for NASA"]
-         "?"]]
-       (toolbar params)
-       (assoc pages 1
-              {:id "pages-top"
-               :class (str "pages content " (if grid? "grid-content"))})
-       [:div#pics {:class (str "content " (if grid? "grid-content"))}
-        (when (> new-count 0)
-          [:div#new-count
-           "Rad, there are " new-count " " [:span.new "new"] " photos!"])
-        (page-pics filtered-pics params)]
-       (assoc pages 1
-              {:id "pages-bottom"
-               :class (str "pages content " (if grid? "grid-content"))})
-       [:div {:id (if grid? "grid-footer" "footer")
-              :class (str "content footer " (if grid? "grid-content"))}
-        "Built by Dan Lidral-Porter. The Mars Ogler is "
-        [:a {:href "http://www.gnu.org/philosophy/free-sw.html"} "free software"]
-        "; go check out its "
-        [:a {:href "https://github.com/aperiodic/mars-ogler"} "source code"] "."
-        [:br]
-        "Did you know NASA's ability to launch missions like Curiosity is "
-        [:a {:href "http://www.planetary.org/get-involved/be-a-space-advocate/"}
-         "being threatened by budget cuts"] "?"]])))
+  [params]
+  (if (= (:format params) :json)
+    (generate-json
+      (-> (filter-pics params)
+        (page-pics params)
+        (->>
+          (map #(dissoc % :acquired :acquired-stamp))
+          (map #(merge % (image->camera %)))
+          (map #(update-in % [:url] (fn [url] (str img/url-prefix url))))
+          (map #(update-in % [:thumbnail-url]
+                           (fn [url] (str img/url-prefix url)))))))
+    ; otherwise (html format)
+    (let [filtered-pics (filter-pics params)
+          last-visit (:visit-last params)
+          new-count (count (take-while
+                             #(> (:acquired-stamp %) last-visit)
+                             (filter-pics (assoc params :sorting :released))))
+          pages (page-links filtered-pics params)
+          grid? (= (:view params) :grid)]
+      (html5
+        [:head
+         [:title "The Mars Ogler"]
+         [:link {:rel "shortcut icon" :href "/favicon.ico"}]
+         (include-css "/css/main.css")
+         (include-css "http://fonts.googleapis.com/css?family=Oswald:700")
+         (include-css "http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400")]
+        [:body
+         [:div#top-content {:class (str "content " (if grid? "grid-content"))}
+          [:h1#title "The Mars Ogler"]
+          [:div#blurb
+           "A Curiosity Mars Science Laboratory raw images viewer"
+           [:br]
+           "Built on top of "
+           [:a {:href "http://curiositymsl.com/"} "Curiosity MSL Viewer"]
+           " and "
+           [:a {:href "http://mars.jpl.nasa.gov/"} "NASA Mars Exploration"]
+           [:br]
+           "How about a "
+           [:a {:href "http://www.penny4nasa.org/the-mission/"}
+            "Penny for NASA"]
+           "?"]]
+         (toolbar params)
+         (assoc pages 1
+                {:id "pages-top"
+                 :class (str "pages content " (if grid? "grid-content"))})
+         [:div#pics {:class (str "content " (if grid? "grid-content"))}
+          (when (> new-count 0)
+            [:div#new-count
+             "Rad, there are " new-count " " [:span.new "new"] " photos!"])
+          (let [{:keys [view visit-last]} params]
+            (->> (page-pics filtered-pics params)
+              (map format-image)
+              (map (if (= view :grid)
+                     #(pic->grid-hiccup % visit-last)
+                     #(pic->list-hiccup % visit-last)))))]
+         (assoc pages 1
+                {:id "pages-bottom"
+                 :class (str "pages content " (if grid? "grid-content"))})
+         [:div {:id (if grid? "grid-footer" "footer")
+                :class (str "content footer " (if grid? "grid-content"))}
+          "Built by Dan Lidral-Porter. The Mars Ogler is "
+          [:a {:href "http://www.gnu.org/philosophy/free-sw.html"}
+           "free software"]
+          "; go check out its "
+          [:a {:href "https://github.com/aperiodic/mars-ogler"} "source code"]
+          "."
+          [:br]
+          "Did you know NASA's ability to launch missions like Curiosity is "
+          [:a
+           {:href "http://www.planetary.org/get-involved/be-a-space-advocate/"}
+           "being threatened by budget cuts"] "?"]]))))
