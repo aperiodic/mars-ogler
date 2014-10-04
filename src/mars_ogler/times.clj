@@ -19,16 +19,30 @@
 (def marstime-parser (% fmt-time/parse marstime-in-format))
 
 (def marstime-out-format
-  (fmt-time/formatter "hh:mm <'span class=\"meridian\"'>a</'span'>"))
+  (fmt-time/formatter "h:mm a"))
 (def marstime-printer (% fmt-time/unparse marstime-out-format))
+
+(def marstime-out-pretty-format
+  (fmt-time/formatter "h:mm <'span class=\"meridian\"'>a</'span'>"))
+(def marstime-pretty-printer (% fmt-time/unparse marstime-out-pretty-format))
 
 (def utc-in-format (fmt-time/formatter "YYYY MMM dd HH:mm:ss 'UTC'"))
 (def utc-parser (% fmt-time/parse utc-in-format))
 
 (def utc-out-format
+  (fmt-time/formatter "h:mm a 'UTC' d MMMM YYYY"))
+(def utc-printer (% fmt-time/unparse utc-out-format))
+
+(def utc-out-pretty-format
   (fmt-time/formatter (str "h:mm <'span class=\"meridian\"'>a</'span'> 'UTC' "
                            "d MMMM YYYY")))
-(def utc-printer (% fmt-time/unparse utc-out-format))
+(def utc-pretty-printer (% fmt-time/unparse utc-out-pretty-format))
+
+(def date-format (fmt-time/formatter "d MMMM YYYY"))
+(def date-printer (% fmt-time/unparse date-format))
+
+(def time-format (fmt-time/formatter "hh:mm a"))
+(def time-printer (% fmt-time/unparse time-format))
 
 (defn- format-with-units
   ([value units]

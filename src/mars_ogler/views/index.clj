@@ -52,22 +52,26 @@
               :class (if new? "new pic-img" "pic-img")}]]]
      [:div.pic-info
       [:div.title-line
-       cam-name [:span.minor " at "] [:span.marstime taken-marstime]
+       cam-name [:span.minor " at "]
+       [:span.marstime (times/marstime-pretty-printer taken-marstime)]
        [:span.minor " on "] "Sol " sol]
-      "Earth Date: &nbsp;" [:span.takendate taken-utc] [:br]
-      "Released " lag " later at " [:span.releasedate released]
-      (when new? " (New)") [:br]
+      "Earth Date: &nbsp;"
+      [:span.takendate (times/utc-pretty-printer taken-utc)]
+      [:br]
+      "Released " lag " later at "
+      [:span.releasedate (times/utc-pretty-printer released)]
+      (when new? " (New)")
+      [:br]
       w [:span.x " x "] h " " type " | ID: " [:a {:href (pic->href pic)} id]]]))
 
 (defn pic->grid-hiccup
-  [{:keys [acquired-stamp id sol taken-marstime] :as pic}
+  [{:keys [acquired-stamp id sol taken-marstime taken-utc] :as pic}
    visit-last]
   (let [new? (> acquired-stamp visit-last)
         cam-name (-> pic image->camera :cam-name)
-        clean-lmst (str (first (re-find #"^((\d){1,2}:\d\d)" taken-marstime))
-                        " "
-                        (first (re-find #"(PM|AM)" taken-marstime)))
-        label (str clean-lmst " on Sol " sol "\n" id)]
+        label (str (times/time-printer taken-marstime) " on Sol " sol
+                   "\n" (times/utc-printer taken-utc)
+                   "\n" id)]
     [:div.grid-pic-wrapper
      [:div.pic.grid-pic
       [:a {:href (pic->href pic), :title label}
@@ -253,7 +257,6 @@
              "Rad, there are " new-count " " [:span.new "new"] " photos!"])
           (let [{:keys [view visit-last]} params]
             (->> (page-pics filtered-pics params)
-              (map format-image)
               (map (if (= view :grid)
                      #(pic->grid-hiccup % visit-last)
                      #(pic->list-hiccup % visit-last)))))]
