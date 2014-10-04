@@ -16,6 +16,9 @@
   :plugins [[lein-ring "0.7.1"]]
   :main mars-ogler.main
   :uberjar-name "mars-ogler.jar"
-  :jvm-opts ["-Xmx576m"]
+  :jvm-opts ["-Xmx850m"
+             "-XX:+UseConcMarkSweepGC"
+             "-XX:+CMSIncrementalMode"
+             "-XX:+UseCompressedOops"]
   :ring {:handler mars-ogler.routes/ogler-handler
          :init mars-ogler.images/setup!})
