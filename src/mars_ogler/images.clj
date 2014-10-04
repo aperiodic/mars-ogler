@@ -103,15 +103,17 @@
 (defn sort-images
   "The images must contain joda DateTime objects in their date keys."
   [imgs]
-  (into {} (for [time-type (disj times/types :acquired)]
-             (let [resort (case time-type
-                            :released reverse
-                            :taken-marstime identity
-                            :taken-utc reverse)]
-               [time-type (->> imgs
-                            (sort-by time-type)
-                            resort
-                            doall)]))))
+  (into {}
+        (pmap (fn [which-time]
+                (let [resort (case which-time
+                               :released reverse
+                               :taken-marstime identity
+                               :taken-utc reverse)]
+                  [which-time (->> imgs
+                                (sort-by which-time)
+                                resort
+                                doall)]))
+              (disj times/types :acquired))))
 
 (defn index-images
   [imgs]
