@@ -18,7 +18,10 @@
   :uberjar-name "mars-ogler.jar"
   :jvm-opts ["-Xmx850m"
              "-XX:+UseConcMarkSweepGC"
-             "-XX:+CMSIncrementalMode"
+             "-XX:+CMSConcurrentMTEnabled"
+             "-XX:+UseParNewGC"
+             "-XX:ConcGCThreads=4"
+             "-XX:ParallelGCThreads=4"
              "-XX:+UseCompressedOops"]
   :ring {:handler mars-ogler.routes/ogler-handler
          :init mars-ogler.images/setup!})
