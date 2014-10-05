@@ -58,7 +58,7 @@
 ;; Formatting
 ;;
 
-(defn image->lag
+(defn image->lag-str
   [img]
   (let [{taken :taken-utc, released :released} img]
     (times/format-interval (if (time/before? taken released)
@@ -69,7 +69,7 @@
   (let [full-dates (select-keys img (disj times/types :taken-marstime))
         marstime (-> img :taken-marstime times/marstime-printer)]
     (-> img
-      (assoc :lag (image->lag img), :taken-marstime marstime)
+      (assoc :taken-marstime marstime)
       (merge (into {} (for [[type date] full-dates]
                         [type (times/utc-printer date)]))))))
 

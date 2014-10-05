@@ -8,7 +8,7 @@
             [mars-ogler.times :as times]
             [mars-ogler.util :refer [generate-json]])
   (:use [hiccup core page]
-        [mars-ogler.image-utils :only [format-image image->camera image->lag
+        [mars-ogler.image-utils :only [format-type image->camera image->lag-str
                                        image->url image->thumbnail-url
                                        thumbnail?]]))
 
@@ -39,11 +39,10 @@
       (str "/stereo?l_id=" l-id "&r_id=" r-id))))
 
 (defn pic->list-hiccup
-  [{:keys [acquired-stamp id lag released size sol stereo? taken-marstime
-           taken-utc type w h]
-    :as pic}
-   visit-last]
-  (let [new? (> acquired-stamp visit-last)
+  [pic visit-last]
+  (let [{:keys [acquired-stamp id released size sol stereo?
+                taken-marstime taken-utc type w h]} (format-type pic)
+        new? (> acquired-stamp visit-last)
         cam-name (-> pic image->camera :cam-name)]
     [:div.list-pic-wrapper
      [:div.pic.list-pic
@@ -58,7 +57,7 @@
       "Earth Date: &nbsp;"
       [:span.takendate (times/utc-pretty-printer taken-utc)]
       [:br]
-      "Released " lag " later at "
+      "Released " (image->lag-str pic) " later at "
       [:span.releasedate (times/utc-pretty-printer released)]
       (when new? " (New)")
       [:br]
