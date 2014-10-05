@@ -14,7 +14,10 @@
 
 (def min-size->pred
   {:thumb (constantly true)
-   :medium (fn [img] (not (thumbnail? img)))
+   :medium (fn [img]
+             (and (not (thumbnail? img))
+                  (or (>= (:w img) 400)
+                      (>= (:h img) 400))))
    :full (fn [img]
            (let [cam-max-size (-> img
                                 image->camera, :cam, cams/cam->max-size)]
