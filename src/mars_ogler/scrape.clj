@@ -33,7 +33,7 @@
      (-> released times/utc-parser times/rfc-printer)
      (-> (time/now) times/rfc-printer)]))
 
-(defn div->map
+(defn div->image
   [div]
   (let [rawtable (-> (html/select div [:.rawtable]) first)
         id (-> (html/select rawtable [:a]) first html/text str/trim)
@@ -46,15 +46,16 @@
               first :attrs :href truncate-url)
         dims (->> (re-find #"(\d+)x(\d+)" (html/text div)) (drop 1))
         [w h] (for [dim dims] (Integer/parseInt dim))]
-    {:w w, :h h, :id id, :type type, :sol sol
-     :taken-marstime marstime :taken-utc taken-utc, :released released
-     :acquired acquired, :thumbnail-url thumbnail-url, :url url}))
+    (images/map->Image
+      {:w w, :h h, :id id, :type type, :sol sol
+       :taken-marstime marstime :taken-utc taken-utc, :released released
+       :acquired acquired, :thumbnail-url thumbnail-url, :url url})))
 
 (defn body->images
   [body-node]
   (let [image-divs (html/select body-node [:body :> :div])]
     (->> image-divs
-      (map div->map)
+      (map div->image)
       (map images/parse-dates))))
 
 ;;

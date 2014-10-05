@@ -1,9 +1,14 @@
 (ns mars-ogler.images
-  (:require [clj-time.core :as time]
+  (:require [clojure.java.io :as io]
+            [clj-time.core :as time]
             [clj-time.coerce :as cvt-time]
             [mars-ogler.cams :as cams]
             [mars-ogler.times :as times])
   (:use [mars-ogler.image-utils :only [image->camera truncate-urls]]))
+
+(defrecord Image
+  [id url type w h thumbnail-url
+   sol taken-marstime taken-utc released acquired acquired-stamp])
 
 ;;
 ;; Public API
@@ -28,25 +33,24 @@
   (let [strs (select-keys img times/types)
         dates (into {} (for [[type date-str] strs]
                          [type (times/rfc-parser date-str)]))
-        taken (:taken-utc dates)
-        released (:released dates)
-        lag (-> (if (time/before? taken released)
-                  (time/interval taken released)
-                  (time/interval taken taken))
-              times/format-interval)
-        acquired (:acquired dates)
-        acquired-stamp (if acquired
+        acquired-stamp (if-let [acquired (:acquired dates)]
                          (cvt-time/to-long acquired)
-                         0)]
-    (-> (merge img dates)
-      (assoc :acquired-stamp acquired-stamp))))
+                         0)
+        img' (assoc img
+                    :acquired-stamp acquired-stamp
+                    :acquired (:acquired dates)
+                    :released (:released dates)
+                    :taken-marstime (:taken-marstime dates)
+                    :taken-utc (:taken-utc dates))]
+    (if-not (instance? Image img')
+      (map->Image img')
+      img')))
 
 (defn unparse-dates
   [img]
   (let [dates (select-keys img times/types)]
-    (-> (into img (for [[type date] dates]
-                    [type (times/rfc-printer date)]))
-      (dissoc :acquired-stamp))))
+    (into img (for [[type date] dates]
+                [type (times/rfc-printer date)]))))
 
 ;;
 ;; Stereo Pairs
@@ -129,20 +133,22 @@
 (defn get-cached-images
   "Read the images cached in the `$images-file`."
   []
-  (binding [*read-eval* false]
-    (try (->> $images-file
-           slurp
-           read-string
-           (map parse-dates))
-      (catch java.io.FileNotFoundException _))))
+  (try (with-open [cache (io/reader (str "file:./" $images-file))]
+         (let [lines (line-seq cache)]
+           (doall
+             (if (> (count lines) 1)
+               (map (comp parse-dates read-string) lines)
+               (->> (read-string (first lines))
+                 (map parse-dates))))))
+    (catch java.io.FileNotFoundException _)))
 
 (defn cache-images!
   [imgs]
-  (->> imgs
-    (map unparse-dates)
-    (map #(dissoc % :cam :cam-name :size))
-    prn-str
-    (spit $images-file)))
+  (let [img->storage-img (comp unparse-dates
+                               #(dissoc % :cam :cam-name :size))]
+    (with-open [cache (io/writer (str "file:./" $images-file))]
+      (doseq [img imgs]
+        (.write cache (prn-str (img->storage-img img)))))))
 
 (defn setup!
   []
